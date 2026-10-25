@@ -17,18 +17,22 @@ import kotlinx.coroutines.launch
 /**
  * ViewModel del módulo de oportunidades.
  *
- * Gestiona el formulario, sus validaciones y los datos
- * que se guardan en la base de datos mediante el repositorio.
+ * Gestiona el formulario, las validaciones y las operaciones
+ * de registro, edición y eliminación de oportunidades.
  */
 class OportunidadViewModel(
     private val repository: OportunidadRepository
 ) : ViewModel() {
 
-    // Estado privado que el ViewModel puede modificar.
+    // Estado del formulario que el ViewModel puede modificar.
     private val _estado = MutableStateFlow(OportunidadUiState())
 
-    // Estado público de solo lectura para la pantalla.
+    // Estado público que observa la interfaz.
     val estado: StateFlow<OportunidadUiState> = _estado.asStateFlow()
+
+    // Guarda el ID de la oportunidad que se está editando.
+    // Si es null, significa que se registrará una oportunidad nueva.
+    private var idOportunidadEditando: Int? = null
 
     // Lista observable de oportunidades almacenadas en Room.
     val oportunidades: StateFlow<List<OportunidadEntity>> =
@@ -117,6 +121,30 @@ class OportunidadViewModel(
         }
     }
 
+    // Prepara el formulario para registrar una oportunidad nueva.
+    fun prepararNuevaOportunidad() {
+        idOportunidadEditando = null
+        _estado.value = OportunidadUiState()
+    }
+
+    // Carga los datos de una oportunidad seleccionada para editarla.
+    fun iniciarEdicion(oportunidad: OportunidadEntity) {
+        // Conserva el ID original para actualizar el mismo registro.
+        idOportunidadEditando = oportunidad.id
+
+        // Rellena el formulario con los datos existentes.
+        _estado.value = OportunidadUiState(
+            nombre = oportunidad.nombre,
+            descripcion = oportunidad.descripcion,
+            tipo = oportunidad.tipo,
+            fuente = oportunidad.fuente,
+            prioridad = oportunidad.prioridad,
+            potencialComercial = oportunidad.potencialComercial,
+            estado = oportunidad.estado,
+            observaciones = oportunidad.observaciones
+        )
+    }
+
     // Comprueba los campos obligatorios del formulario.
     fun validarFormulario(): Boolean {
         val actual = _estado.value
@@ -152,10 +180,11 @@ class OportunidadViewModel(
             } else null
         )
 
-        // Publica los errores para mostrarlos en pantalla.
+        // Publica los errores para mostrarlos en la pantalla.
         _estado.update { it.copy(errores = errores) }
 
-        // El formulario es válido si todos los errores son nulos.
+        // Devuelve true únicamente cuando todos los campos
+        // obligatorios son válidos.
         return listOf(
             errores.nombre,
             errores.descripcion,
@@ -167,15 +196,20 @@ class OportunidadViewModel(
         ).all { it == null }
     }
 
-    // Guarda la oportunidad si todos los campos son válidos.
+    // Registra una oportunidad nueva o actualiza una existente.
     fun guardarOportunidad() {
+        // No guarda si hay errores de validación.
         if (!validarFormulario()) return
 
-        // Captura los datos actuales del formulario.
         val actual = _estado.value
 
-        // Convierte los datos del formulario en una entidad Room.
+        // Obtiene el ID si se está editando.
+        val idActual = idOportunidadEditando
+
+        // Construye la entidad con los datos del formulario.
         val oportunidad = OportunidadEntity(
+            // Conserva el ID al editar; usa 0 para un registro nuevo.
+            id = idActual ?: 0,
             nombre = actual.nombre.trim(),
             descripcion = actual.descripcion.trim(),
             tipo = actual.tipo,
@@ -186,12 +220,18 @@ class OportunidadViewModel(
             observaciones = actual.observaciones.trim()
         )
 
-        // Ejecuta la inserción sin bloquear la interfaz.
+        // Ejecuta la operación de base de datos sin bloquear la UI.
         viewModelScope.launch {
-            repository.insertar(oportunidad)
+            if (idActual == null) {
+                // No existe un ID seleccionado: inserta un registro.
+                repository.insertar(oportunidad)
+            } else {
+                // Existe un ID: actualiza el registro correspondiente.
+                repository.actualizar(oportunidad)
+            }
 
-            // Limpia el formulario después de guardar.
-            _estado.value = OportunidadUiState()
+            // Limpia el modo edición y restablece el formulario.
+            prepararNuevaOportunidad()
         }
     }
 
