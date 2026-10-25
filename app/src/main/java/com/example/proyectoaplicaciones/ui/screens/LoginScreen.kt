@@ -1,3 +1,6 @@
+package com.example.proyectoaplicaciones.ui.screens
+
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +22,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectoaplicaciones.viewmodel.LoginViewModel
+import androidx.compose.ui.text.style.TextAlign
 
 /**
  * Pantalla de inicio de sesión.
@@ -44,14 +48,18 @@ fun LoginScreen(
         // Título de la aplicación.
         Text(
             text = "Gestión de oportunidades",
-            style = MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.headlineSmall,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = "Inicia sesión para continuar",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(24.dp))

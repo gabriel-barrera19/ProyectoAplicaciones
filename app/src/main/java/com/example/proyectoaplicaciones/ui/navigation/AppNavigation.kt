@@ -1,5 +1,6 @@
 package com.example.proyectoaplicaciones.ui.navigation
 
+
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
@@ -11,44 +12,45 @@ import androidx.navigation.compose.rememberNavController
 import com.example.proyectoaplicaciones.data.local.AppDatabase
 import com.example.proyectoaplicaciones.data.repository.OportunidadRepository
 import com.example.proyectoaplicaciones.ui.screens.ListaOportunidadesScreen
+import com.example.proyectoaplicaciones.ui.screens.LoginScreen
+import com.example.proyectoaplicaciones.ui.screens.MenuPrincipalScreen
 import com.example.proyectoaplicaciones.ui.screens.OportunidadFormScreen
+import com.example.proyectoaplicaciones.viewmodel.LoginViewModel
 import com.example.proyectoaplicaciones.viewmodel.OportunidadViewModel
 
-// Define las rutas de navegación de la aplicación.
+// Define las rutas de navegación.
 object Rutas {
-    // Pantalla de inicio de sesión.
     const val LOGIN = "login"
-
-    // Menú principal de la aplicación.
     const val MENU = "menu"
-
-    // Lista de oportunidades comerciales.
     const val INICIO = "inicio"
-
-    // Formulario para registrar o editar oportunidades.
     const val FORMULARIO = "formulario"
 }
 
-// Configura la navegación y las dependencias del módulo.
+// Configura la navegación y las dependencias.
 @Composable
 fun AppNavigation() {
 
-    // Controla la navegación entre las pantallas.
+    // Controla la navegación entre pantallas.
     val navController = rememberNavController()
 
     // Obtiene el contexto de Android.
     val context = LocalContext.current
 
-    // Obtiene la instancia de la base de datos Room.
+    // Obtiene la base de datos local.
     val database = AppDatabase.obtenerInstancia(context)
 
-    // Crea el repositorio que comunica el ViewModel con Room.
+    // Crea el repositorio de oportunidades.
     val repository = OportunidadRepository(database.oportunidadDao())
 
-    // Crea una fábrica para construir el ViewModel con el repositorio.
+    // Permite crear el ViewModel con su repositorio.
     val factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(OportunidadViewModel::class.java)) {
+        override fun <T : ViewModel> create(
+            modelClass: Class<T>
+        ): T {
+            if (modelClass.isAssignableFrom(
+                    OportunidadViewModel::class.java
+                )
+            ) {
                 @Suppress("UNCHECKED_CAST")
                 return OportunidadViewModel(repository) as T
             }
@@ -57,7 +59,7 @@ fun AppNavigation() {
         }
     }
 
-    // Comparte el mismo ViewModel entre la lista y el formulario.
+    // Comparte el ViewModel entre la lista y el formulario.
     val oportunidadViewModel: OportunidadViewModel = viewModel(
         factory = factory
     )
@@ -65,21 +67,50 @@ fun AppNavigation() {
     // Define las pantallas de la aplicación.
     NavHost(
         navController = navController,
-        startDestination = Rutas.INICIO
+        startDestination = Rutas.LOGIN
     ) {
 
-        // Pantalla principal con la lista de oportunidades.
+        // Pantalla de inicio de sesión.
+        composable(Rutas.LOGIN) {
+            val loginViewModel: LoginViewModel = viewModel()
+
+            LoginScreen(
+                viewModel = loginViewModel,
+                alLoginExitoso = {
+                    navController.navigate(Rutas.MENU) {
+                        popUpTo(Rutas.LOGIN) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
+        }
+
+        // Menú principal después de iniciar sesión.
+        composable(Rutas.MENU) {
+            MenuPrincipalScreen(
+                alVerOportunidades = {
+                    navController.navigate(Rutas.INICIO)
+                },
+                alCerrarSesion = {
+                    navController.navigate(Rutas.LOGIN) {
+                        popUpTo(Rutas.MENU) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        // Lista de oportunidades comerciales.
         composable(Rutas.INICIO) {
             ListaOportunidadesScreen(
                 viewModel = oportunidadViewModel,
-
-                // Prepara un formulario vacío para registrar.
                 alRegistrarOportunidad = {
                     oportunidadViewModel.prepararNuevaOportunidad()
                     navController.navigate(Rutas.FORMULARIO)
                 },
-
-                // Carga los datos de la oportunidad para editar.
                 alEditarOportunidad = { oportunidad ->
                     oportunidadViewModel.iniciarEdicion(oportunidad)
                     navController.navigate(Rutas.FORMULARIO)
@@ -87,12 +118,10 @@ fun AppNavigation() {
             )
         }
 
-        // Pantalla compartida para registrar y editar.
+        // Formulario para registrar o editar.
         composable(Rutas.FORMULARIO) {
             OportunidadFormScreen(
                 viewModel = oportunidadViewModel,
-
-                // Regresa a la lista al pulsar la flecha.
                 alVolver = {
                     navController.popBackStack()
                 }
