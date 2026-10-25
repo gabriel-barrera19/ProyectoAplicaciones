@@ -27,6 +27,12 @@ data class OportunidadUiState(
     // Observaciones adicionales.
     val observaciones: String = "",
 
+    // Fecha asociada a la oportunidad, inicialmente vacía.
+    val fecha: String = "",
+
     // Mensajes de error asociados a los campos.
-    val errores: OportunidadErrores = OportunidadErrores()
+    val errores: OportunidadErrores = OportunidadErrores(),
+
+    // Indica si el formulario está editando una oportunidad existente.
+    val esEdicion: Boolean = false
 )

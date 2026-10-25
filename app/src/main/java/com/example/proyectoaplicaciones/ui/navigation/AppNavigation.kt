@@ -16,7 +16,16 @@ import com.example.proyectoaplicaciones.viewmodel.OportunidadViewModel
 
 // Define las rutas de navegación de la aplicación.
 object Rutas {
+    // Pantalla de inicio de sesión.
+    const val LOGIN = "login"
+
+    // Menú principal de la aplicación.
+    const val MENU = "menu"
+
+    // Lista de oportunidades comerciales.
     const val INICIO = "inicio"
+
+    // Formulario para registrar o editar oportunidades.
     const val FORMULARIO = "formulario"
 }
 

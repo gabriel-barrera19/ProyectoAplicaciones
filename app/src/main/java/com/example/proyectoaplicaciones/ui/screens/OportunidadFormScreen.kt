@@ -30,6 +30,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import android.app.DatePickerDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalContext
+import java.util.Calendar
+import java.util.Locale
+import androidx.compose.material3.AlertDialog
+import androidx.compose.runtime.LaunchedEffect
 
 // Pantalla para registrar una oportunidad comercial.
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,11 +48,27 @@ fun OportunidadFormScreen(
     // Observa el estado que administra el ViewModel.
     val estado by viewModel.estado.collectAsState()
 
+    // Guarda el mensaje de confirmación que se mostrará al usuario.
+    var mensajeConfirmacion by remember { mutableStateOf<String?>(null) }
+
+// Escucha el resultado que envía el ViewModel después de guardar.
+    LaunchedEffect(viewModel) {
+        viewModel.resultadoGuardado.collect { mensaje ->
+            mensajeConfirmacion = mensaje
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Registrar oportunidad")
+                    Text(
+                        if (estado.esEdicion) {
+                            "Editar oportunidad"
+                        } else {
+                            "Registrar oportunidad"
+                        }
+                    )
                 },
                 navigationIcon = {
                     IconButton(
@@ -111,7 +134,14 @@ fun OportunidadFormScreen(
                 error = estado.errores.fuente,
                 alCambiar = viewModel::onFuenteChange
             )
-
+            /*
+             * Campo para seleccionar la fecha de la oportunidad.
+             * La fecha seleccionada se envía al ViewModel.
+             */
+            CampoFecha(
+                fecha = estado.fecha,
+                alSeleccionar = viewModel::onFechaChange
+            )
             // Selección: prioridad.
             CampoSeleccion(
                 etiqueta = "Prioridad",
@@ -168,8 +198,46 @@ fun OportunidadFormScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Guardar oportunidad")
+                Text(
+                    if (estado.esEdicion) {
+                        "Guardar cambios"
+                    } else {
+                        "Registrar oportunidad"
+                    }
+                )
             }
+        }
+        // Muestra la confirmación del resultado del guardado.
+        if (mensajeConfirmacion != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    mensajeConfirmacion = null
+                },
+                title = {
+                    Text(
+                        if (mensajeConfirmacion!!.startsWith("Error")) {
+                            "No se pudo guardar"
+                        } else {
+                            "Operación exitosa"
+                        }
+                    )
+                },
+                text = {
+                    Text(mensajeConfirmacion!!)
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            mensajeConfirmacion = null
+
+                            // Regresa a Gestión de Oportunidades.
+                            alVolver()
+                        }
+                    ) {
+                        Text("Aceptar")
+                    }
+                }
+            )
         }
     }
 }
@@ -202,7 +270,78 @@ private fun CampoTexto(
         }
     )
 }
+/**
+ * Componente reutilizable para seleccionar una fecha.
+ * La fecha se devuelve en formato AAAA-MM-DD.
+ */
+@Composable
+private fun CampoFecha(
+    fecha: String,
+    alSeleccionar: (String) -> Unit
+) {
+    // Obtiene el contexto de Android para abrir el calendario.
+    val contexto = LocalContext.current
 
+    // Muestra la fecha seleccionada en un campo de solo lectura.
+    OutlinedTextField(
+        value = if (fecha.isBlank()) {
+            ""
+        } else {
+            fecha
+        },
+        onValueChange = {},
+        label = { Text("Fecha de la oportunidad") },
+        placeholder = { Text("Seleccionar fecha") },
+        readOnly = true,
+        modifier = Modifier.fillMaxWidth(),
+        trailingIcon = {
+            TextButton(
+                onClick = {
+                    // Obtiene la fecha actual para iniciar el calendario.
+                    val calendario = Calendar.getInstance()
+
+                    // Si ya existe una fecha, intenta utilizarla.
+                    if (fecha.isNotBlank()) {
+                        val partes = fecha.split("-")
+
+                        if (partes.size == 3) {
+                            calendario.set(
+                                partes[0].toIntOrNull()
+                                    ?: calendario.get(Calendar.YEAR),
+                                (partes[1].toIntOrNull()
+                                    ?: calendario.get(Calendar.MONTH) + 1) - 1,
+                                partes[2].toIntOrNull()
+                                    ?: calendario.get(Calendar.DAY_OF_MONTH)
+                            )
+                        }
+                    }
+
+                    // Abre el calendario nativo de Android.
+                    DatePickerDialog(
+                        contexto,
+                        { _, anio, mes, dia ->
+                            // Guarda la fecha con formato AAAA-MM-DD.
+                            val fechaSeleccionada = String.format(
+                                Locale.ROOT,
+                                "%04d-%02d-%02d",
+                                anio,
+                                mes + 1,
+                                dia
+                            )
+
+                            alSeleccionar(fechaSeleccionada)
+                        },
+                        calendario.get(Calendar.YEAR),
+                        calendario.get(Calendar.MONTH),
+                        calendario.get(Calendar.DAY_OF_MONTH)
+                    ).show()
+                }
+            ) {
+                Text("Elegir")
+            }
+        }
+    )
+}
 // Componente reutilizable para listas de opciones.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

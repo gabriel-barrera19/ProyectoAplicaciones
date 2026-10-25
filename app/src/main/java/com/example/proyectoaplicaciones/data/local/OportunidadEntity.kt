@@ -21,5 +21,9 @@ data class OportunidadEntity(
     // Estado inicial definido para una oportunidad nueva.
     val estado: String = "Evento identificado",
 
-    val observaciones: String = ""
+    // Observaciones adicionales de la oportunidad.
+    val observaciones: String = "",
+
+// Fecha de la oportunidad en formato AAAA-MM-DD.
+    val fecha: String = ""
 )

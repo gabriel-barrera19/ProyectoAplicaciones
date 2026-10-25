@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 
 /**
  * ViewModel del módulo de oportunidades.
@@ -29,6 +31,12 @@ class OportunidadViewModel(
 
     // Estado público que observa la interfaz.
     val estado: StateFlow<OportunidadUiState> = _estado.asStateFlow()
+
+    // Comunica a la pantalla el resultado de guardar una oportunidad.
+    private val _resultadoGuardado = Channel<String>(Channel.BUFFERED)
+
+    // Permite que la pantalla reciba las confirmaciones de guardado.
+    val resultadoGuardado = _resultadoGuardado.receiveAsFlow()
 
     // Guarda el ID de la oportunidad que se está editando.
     // Si es null, significa que se registrará una oportunidad nueva.
@@ -121,6 +129,13 @@ class OportunidadViewModel(
         }
     }
 
+    // Actualiza la fecha seleccionada en el formulario.
+    fun onFechaChange(nuevaFecha: String) {
+        _estado.value = _estado.value.copy(
+            fecha = nuevaFecha
+        )
+    }
+
     // Prepara el formulario para registrar una oportunidad nueva.
     fun prepararNuevaOportunidad() {
         idOportunidadEditando = null
@@ -141,7 +156,9 @@ class OportunidadViewModel(
             prioridad = oportunidad.prioridad,
             potencialComercial = oportunidad.potencialComercial,
             estado = oportunidad.estado,
-            observaciones = oportunidad.observaciones
+            observaciones = oportunidad.observaciones,
+            fecha = oportunidad.fecha,
+            esEdicion = true
         )
     }
 
@@ -217,21 +234,39 @@ class OportunidadViewModel(
             prioridad = actual.prioridad,
             potencialComercial = actual.potencialComercial,
             estado = actual.estado,
+            fecha = actual.fecha,
             observaciones = actual.observaciones.trim()
         )
 
         // Ejecuta la operación de base de datos sin bloquear la UI.
         viewModelScope.launch {
-            if (idActual == null) {
-                // No existe un ID seleccionado: inserta un registro.
-                repository.insertar(oportunidad)
-            } else {
-                // Existe un ID: actualiza el registro correspondiente.
-                repository.actualizar(oportunidad)
-            }
+            try {
+                // Guarda una oportunidad nueva o actualiza una existente.
+                if (idActual == null) {
+                    repository.insertar(oportunidad)
 
-            // Limpia el modo edición y restablece el formulario.
-            prepararNuevaOportunidad()
+                    // Informa que el registro se creó correctamente.
+                    _resultadoGuardado.send(
+                        "Oportunidad creada exitosamente"
+                    )
+                } else {
+                    repository.actualizar(oportunidad)
+
+                    // Informa que los cambios se guardaron correctamente.
+                    _resultadoGuardado.send(
+                        "Oportunidad actualizada exitosamente"
+                    )
+                }
+
+                // Restablece el formulario después de guardar.
+                prepararNuevaOportunidad()
+
+            } catch (e: Exception) {
+                // Informa si ocurrió un problema al guardar.
+                _resultadoGuardado.send(
+                    "Error al guardar la oportunidad"
+                )
+            }
         }
     }
 
