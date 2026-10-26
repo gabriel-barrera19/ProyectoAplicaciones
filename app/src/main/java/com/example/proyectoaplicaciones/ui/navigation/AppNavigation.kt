@@ -1,6 +1,5 @@
 package com.example.proyectoaplicaciones.ui.navigation
 
-
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
@@ -15,6 +14,7 @@ import com.example.proyectoaplicaciones.ui.screens.ListaOportunidadesScreen
 import com.example.proyectoaplicaciones.ui.screens.LoginScreen
 import com.example.proyectoaplicaciones.ui.screens.MenuPrincipalScreen
 import com.example.proyectoaplicaciones.ui.screens.OportunidadFormScreen
+import com.example.proyectoaplicaciones.ui.screens.QrScannerScreen
 import com.example.proyectoaplicaciones.viewmodel.LoginViewModel
 import com.example.proyectoaplicaciones.viewmodel.OportunidadViewModel
 
@@ -24,6 +24,7 @@ object Rutas {
     const val MENU = "menu"
     const val INICIO = "inicio"
     const val FORMULARIO = "formulario"
+    const val LECTOR_QR = "lector_qr"
 }
 
 // Configura la navegación y las dependencias.
@@ -47,7 +48,8 @@ fun AppNavigation() {
         override fun <T : ViewModel> create(
             modelClass: Class<T>
         ): T {
-            if (modelClass.isAssignableFrom(
+            if (
+                modelClass.isAssignableFrom(
                     OportunidadViewModel::class.java
                 )
             ) {
@@ -99,6 +101,9 @@ fun AppNavigation() {
                         }
                         launchSingleTop = true
                     }
+                },
+                alAbrirLectorQR = {
+                    navController.navigate(Rutas.LECTOR_QR)
                 }
             )
         }
@@ -120,7 +125,7 @@ fun AppNavigation() {
                     navController.navigate(Rutas.FORMULARIO)
                 },
 
-                // Regresa al menú principal sin duplicarlo en la navegación.
+                // Regresa al menú principal.
                 alIrMenuPrincipal = {
                     navController.navigate(Rutas.MENU) {
                         popUpTo(Rutas.MENU) {
@@ -142,7 +147,7 @@ fun AppNavigation() {
             )
         }
 
-        // Formulario para registrar o editar.
+        // Formulario para registrar o editar una oportunidad.
         composable(Rutas.FORMULARIO) {
             OportunidadFormScreen(
                 viewModel = oportunidadViewModel,
@@ -174,6 +179,15 @@ fun AppNavigation() {
                         }
                         launchSingleTop = true
                     }
+                }
+            )
+        }
+
+        // Pantalla del lector QR.
+        composable(Rutas.LECTOR_QR) {
+            QrScannerScreen(
+                alVolver = {
+                    navController.popBackStack()
                 }
             )
         }

@@ -37,7 +37,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun MenuPrincipalScreen(
     alVerOportunidades: () -> Unit,
-    alCerrarSesion: () -> Unit
+    alCerrarSesion: () -> Unit,
+    alAbrirLectorQR: () -> Unit
 ) {
     // Controla si el menú desplegable está abierto.
     var menuAbierto by remember {
@@ -90,6 +91,16 @@ fun MenuPrincipalScreen(
 
                         DropdownMenuItem(
                             text = {
+                                Text("Leer código QR")
+                            },
+                            onClick = {
+                                menuAbierto = false
+                                alAbrirLectorQR()
+                            }
+                        )
+
+                        DropdownMenuItem(
+                            text = {
                                 Text("Cerrar sesión")
                             },
                             onClick = {
@@ -113,7 +124,6 @@ fun MenuPrincipalScreen(
                 initialOffsetY = { altura -> altura / 8 }
             )
         ) {
-            // Contenido central del menú.
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -145,6 +155,17 @@ fun MenuPrincipalScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Gestionar oportunidades")
+                }
+
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+
+                Button(
+                    onClick = alAbrirLectorQR,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Leer código QR")
                 }
             }
         }
