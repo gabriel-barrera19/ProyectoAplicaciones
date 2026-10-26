@@ -34,3 +34,4 @@ Contraseña: Demo1234
 
 - `Trello`: https://trello.com/invite/b/6ade7ad6b369f7625b22ba27/ATTI8e036dc9151a9af62da8080ade6a70d17963565B/proyectoappmoviles
 - `Github`: https://github.com/gabriel-barrera19/ProyectoAplicaciones.git
+- `Documentación técnica y de IU`: (https://docs.google.com/document/d/1J4oqc2JD37omezfLzNFh59uOClLc46-DlW5VIHGvrYk/edit?usp=sharing)
