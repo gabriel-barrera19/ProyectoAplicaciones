@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.Flow
  *
  * Actúa como intermediario entre el ViewModel
  * y el DAO de Room.
+ *
+ * Acá tenemos las funciones que nos permiten mantener la persistencia
+ * de los datos de la base de datos.
  */
 class OportunidadRepository(
     private val oportunidadDao: OportunidadDao

@@ -19,6 +19,8 @@ import com.example.proyectoaplicaciones.viewmodel.LoginViewModel
 import com.example.proyectoaplicaciones.viewmodel.OportunidadViewModel
 
 // Define las rutas de navegación.
+// En general este es el menú más importante de la navegación, y nos vamos a
+// colgar de aquí para seguir agregando rutas de menús
 object Rutas {
     const val LOGIN = "login"
     const val MENU = "menu"
