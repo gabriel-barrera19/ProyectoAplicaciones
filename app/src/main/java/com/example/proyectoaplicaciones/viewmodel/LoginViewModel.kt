@@ -6,6 +6,9 @@ import com.example.proyectoaplicaciones.model.LoginUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 // Administra la lógica y el estado de la pantalla de Login.
 class LoginViewModel : ViewModel() {
@@ -38,8 +41,8 @@ class LoginViewModel : ViewModel() {
         )
     }
 
-    // Comprueba los campos y las credenciales de demostración.
-    fun validarAcceso(): Boolean {
+    // Valida las credenciales y muestra el estado de carga.
+    fun validarAcceso(alFinalizar: (Boolean) -> Unit) {
 
         val actual = _estado.value
 
@@ -56,35 +59,51 @@ class LoginViewModel : ViewModel() {
             null
         }
 
-        // Si falta información, devuelve los errores de los campos.
+        // Si faltan datos, muestra los errores sin iniciar la carga.
         if (errorUsuario != null || errorContrasena != null) {
             _estado.value = actual.copy(
                 errores = LoginErrores(
                     usuario = errorUsuario,
                     contrasena = errorContrasena
-                )
+                ),
+                cargando = false
             )
-            return false
+            return
         }
 
-        // Credenciales ficticias para probar el funcionamiento del Login.
-        val accesoValido =
-            actual.usuario.trim().equals(
-                "comercial@demo.cl",
-                ignoreCase = true
-            ) && actual.contrasena == "Demo1234"
+        // Evita procesar varios intentos simultáneamente.
+        if (actual.cargando) return
 
-        // Muestra un error general si los datos no coinciden.
+        // Activa el indicador de carga y limpia los errores anteriores.
         _estado.value = actual.copy(
-            errores = LoginErrores(
-                credenciales = if (accesoValido) {
-                    null
-                } else {
-                    "Usuario o contraseña incorrectos"
-                }
-            )
+            errores = LoginErrores(),
+            cargando = true
         )
 
-        return accesoValido
+        viewModelScope.launch {
+            // Permite que el usuario vea el indicador de carga.
+            delay(1500)
+
+            val accesoValido =
+                actual.usuario.trim().equals(
+                    "comercial@demo.cl",
+                    ignoreCase = true
+                ) && actual.contrasena == "Demo1234"
+
+            // Actualiza el estado y muestra el resultado.
+            _estado.value = _estado.value.copy(
+                cargando = false,
+                errores = LoginErrores(
+                    credenciales = if (accesoValido) {
+                        null
+                    } else {
+                        "Usuario o contraseña incorrectos"
+                    }
+                )
+            )
+
+            // Informa a la pantalla si el ingreso fue correcto.
+            alFinalizar(accesoValido)
+        }
     }
 }

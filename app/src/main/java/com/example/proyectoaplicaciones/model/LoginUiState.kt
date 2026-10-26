@@ -10,5 +10,8 @@ data class LoginUiState(
     val contrasena: String = "",
 
     // Mensajes de error agrupados en un objeto independiente.
-    val errores: LoginErrores = LoginErrores()
+    val errores: LoginErrores = LoginErrores(),
+
+    // Indica si se está procesando el inicio de sesión.
+    val cargando: Boolean = false
 )
