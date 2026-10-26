@@ -1,5 +1,9 @@
 package com.example.proyectoaplicaciones.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.proyectoaplicaciones.data.local.OportunidadEntity
 import com.example.proyectoaplicaciones.viewmodel.OportunidadViewModel
-
 
 /**
  * Muestra las oportunidades almacenadas en Room.
@@ -77,7 +80,6 @@ fun ListaOportunidadesScreen(
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-
             // Abre el formulario para registrar una oportunidad nueva.
             Button(
                 onClick = alRegistrarOportunidad,
@@ -87,18 +89,17 @@ fun ListaOportunidadesScreen(
             }
 
             if (oportunidades.isEmpty()) {
-
                 // Mensaje mostrado cuando no hay registros.
                 Text(
                     text = "Todavía no hay oportunidades registradas.",
                     style = MaterialTheme.typography.bodyLarge
                 )
-
             } else {
-
                 // Lista desplazable de oportunidades.
                 LazyColumn(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
                     contentPadding = PaddingValues(vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -107,45 +108,61 @@ fun ListaOportunidadesScreen(
                         key = { oportunidad -> oportunidad.id }
                     ) { oportunidad ->
 
-                        // Tarjeta con los datos de cada oportunidad.
-                        Card(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-
-                                Text(
-                                    text = oportunidad.nombre,
-                                    style = MaterialTheme.typography.titleMedium
+                        // Cada tarjeta aparece con una animación suave.
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = fadeIn(
+                                animationSpec = tween(
+                                    durationMillis = 500
                                 )
-
-                                Text("Tipo: ${oportunidad.tipo}")
-                                Text("Prioridad: ${oportunidad.prioridad}")
-                                Text("Estado: ${oportunidad.estado}")
-
-                                // Botones para modificar o eliminar el registro.
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) + slideInVertically(
+                                animationSpec = tween(
+                                    durationMillis = 500
+                                ),
+                                initialOffsetY = { altura ->
+                                    altura / 8
+                                }
+                            )
+                        ) {
+                            // Tarjeta con los datos de cada oportunidad.
+                            Card(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Button(
-                                        onClick = {
-                                            alEditarOportunidad(oportunidad)
-                                        },
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text("Editar")
-                                    }
+                                    Text(
+                                        text = oportunidad.nombre,
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
 
-                                    OutlinedButton(
-                                        onClick = {
-                                            oportunidadPorEliminar = oportunidad
-                                        },
-                                        modifier = Modifier.weight(1f)
+                                    Text("Tipo: ${oportunidad.tipo}")
+                                    Text("Prioridad: ${oportunidad.prioridad}")
+                                    Text("Estado: ${oportunidad.estado}")
+
+                                    // Botones para modificar o eliminar el registro.
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Text("Eliminar")
+                                        Button(
+                                            onClick = {
+                                                alEditarOportunidad(oportunidad)
+                                            },
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text("Editar")
+                                        }
+
+                                        OutlinedButton(
+                                            onClick = {
+                                                oportunidadPorEliminar = oportunidad
+                                            },
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text("Eliminar")
+                                        }
                                     }
                                 }
                             }
@@ -158,7 +175,6 @@ fun ListaOportunidadesScreen(
 
     // Pide confirmación antes de borrar definitivamente.
     oportunidadPorEliminar?.let { oportunidad ->
-
         AlertDialog(
             onDismissRequest = {
                 oportunidadPorEliminar = null
@@ -168,8 +184,8 @@ fun ListaOportunidadesScreen(
             },
             text = {
                 Text(
-                    "¿Seguro que deseas eliminar " +
-                            "\"${oportunidad.nombre}\"? Esta acción no se puede deshacer."
+                    "¿Seguro que deseas eliminar \"${oportunidad.nombre}\"? " +
+                            "Esta acción no se puede deshacer."
                 )
             },
             confirmButton = {
