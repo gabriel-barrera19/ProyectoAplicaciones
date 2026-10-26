@@ -107,13 +107,37 @@ fun AppNavigation() {
         composable(Rutas.INICIO) {
             ListaOportunidadesScreen(
                 viewModel = oportunidadViewModel,
+
+                // Abre el formulario para registrar una oportunidad.
                 alRegistrarOportunidad = {
                     oportunidadViewModel.prepararNuevaOportunidad()
                     navController.navigate(Rutas.FORMULARIO)
                 },
+
+                // Abre el formulario para editar una oportunidad.
                 alEditarOportunidad = { oportunidad ->
                     oportunidadViewModel.iniciarEdicion(oportunidad)
                     navController.navigate(Rutas.FORMULARIO)
+                },
+
+                // Regresa al menú principal sin duplicarlo en la navegación.
+                alIrMenuPrincipal = {
+                    navController.navigate(Rutas.MENU) {
+                        popUpTo(Rutas.MENU) {
+                            inclusive = false
+                        }
+                        launchSingleTop = true
+                    }
+                },
+
+                // Cierra la sesión y limpia las pantallas anteriores.
+                alCerrarSesion = {
+                    navController.navigate(Rutas.LOGIN) {
+                        popUpTo(navController.graph.id) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -122,8 +146,34 @@ fun AppNavigation() {
         composable(Rutas.FORMULARIO) {
             OportunidadFormScreen(
                 viewModel = oportunidadViewModel,
+
+                // Regresa a la pantalla anterior.
                 alVolver = {
                     navController.popBackStack()
+                },
+
+                // Navega al menú principal.
+                alIrMenuPrincipal = {
+                    navController.navigate(Rutas.MENU) {
+                        launchSingleTop = true
+                    }
+                },
+
+                // Navega a la lista de oportunidades.
+                alVerOportunidades = {
+                    navController.navigate(Rutas.INICIO) {
+                        launchSingleTop = true
+                    }
+                },
+
+                // Cierra la sesión y vuelve al Login.
+                alCerrarSesion = {
+                    navController.navigate(Rutas.LOGIN) {
+                        popUpTo(navController.graph.id) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
                 }
             )
         }

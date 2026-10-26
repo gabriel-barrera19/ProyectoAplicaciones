@@ -43,8 +43,11 @@ import androidx.compose.runtime.LaunchedEffect
 @Composable
 fun OportunidadFormScreen(
     viewModel: OportunidadViewModel,
-    alVolver: () -> Unit
-) {
+    alVolver: () -> Unit,
+    alIrMenuPrincipal: () -> Unit,
+    alVerOportunidades: () -> Unit,
+    alCerrarSesion: () -> Unit
+){
     // Observa el estado que administra el ViewModel.
     val estado by viewModel.estado.collectAsState()
 
@@ -76,9 +79,16 @@ fun OportunidadFormScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = "Volver a la lista"
                         )
                     }
+                },
+                actions = {
+                    MenuAplicacion(
+                        alIrMenuPrincipal = alIrMenuPrincipal,
+                        alVerOportunidades = alVerOportunidades,
+                        alCerrarSesion = alCerrarSesion
+                    )
                 }
             )
         }

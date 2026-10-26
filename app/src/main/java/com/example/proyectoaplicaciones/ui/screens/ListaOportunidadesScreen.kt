@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.example.proyectoaplicaciones.data.local.OportunidadEntity
 import com.example.proyectoaplicaciones.viewmodel.OportunidadViewModel
 
+
 /**
  * Muestra las oportunidades almacenadas en Room.
  * Permite registrar, editar y eliminar oportunidades.
@@ -38,7 +39,9 @@ import com.example.proyectoaplicaciones.viewmodel.OportunidadViewModel
 fun ListaOportunidadesScreen(
     viewModel: OportunidadViewModel,
     alRegistrarOportunidad: () -> Unit,
-    alEditarOportunidad: (OportunidadEntity) -> Unit
+    alEditarOportunidad: (OportunidadEntity) -> Unit,
+    alIrMenuPrincipal: () -> Unit,
+    alCerrarSesion: () -> Unit
 ) {
     // Observa la lista de oportunidades del ViewModel.
     val oportunidades by viewModel.oportunidades.collectAsState()
@@ -53,6 +56,15 @@ fun ListaOportunidadesScreen(
             TopAppBar(
                 title = {
                     Text("Gestión de Oportunidades")
+                },
+                navigationIcon = {
+                    MenuAplicacion(
+                        alIrMenuPrincipal = alIrMenuPrincipal,
+                        alVerOportunidades = {
+                            // Ya estamos en la lista de oportunidades.
+                        },
+                        alCerrarSesion = alCerrarSesion
+                    )
                 }
             )
         }
