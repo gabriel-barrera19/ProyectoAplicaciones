@@ -1,4 +1,4 @@
-package com.example.proyectoaplicaciones.data.repository
+package com.example.proyectoaplicaciones.repository
 
 import com.example.proyectoaplicaciones.data.local.OportunidadDao
 import com.example.proyectoaplicaciones.data.local.OportunidadEntity

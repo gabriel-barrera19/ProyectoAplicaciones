@@ -38,6 +38,12 @@ android {
 }
 
 dependencies {
+    // Consumo de API REST mediante Retrofit
+    implementation(libs.retrofit)
+
+    // Conversión de JSON a objetos Kotlin
+    implementation(libs.retrofit.gson)
+
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

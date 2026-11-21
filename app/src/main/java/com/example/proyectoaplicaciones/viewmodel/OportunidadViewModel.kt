@@ -3,7 +3,7 @@ package com.example.proyectoaplicaciones.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectoaplicaciones.data.local.OportunidadEntity
-import com.example.proyectoaplicaciones.data.repository.OportunidadRepository
+import com.example.proyectoaplicaciones.repository.OportunidadRepository
 import com.example.proyectoaplicaciones.model.OportunidadErrores
 import com.example.proyectoaplicaciones.model.OportunidadUiState
 import kotlinx.coroutines.flow.MutableStateFlow

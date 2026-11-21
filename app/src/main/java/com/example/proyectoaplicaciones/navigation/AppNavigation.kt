@@ -1,4 +1,4 @@
-package com.example.proyectoaplicaciones.ui.navigation
+package com.example.proyectoaplicaciones.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
@@ -9,7 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.proyectoaplicaciones.data.local.AppDatabase
-import com.example.proyectoaplicaciones.data.repository.OportunidadRepository
+import com.example.proyectoaplicaciones.repository.OportunidadRepository
 import com.example.proyectoaplicaciones.ui.screens.ListaOportunidadesScreen
 import com.example.proyectoaplicaciones.ui.screens.LoginScreen
 import com.example.proyectoaplicaciones.ui.screens.MenuPrincipalScreen
