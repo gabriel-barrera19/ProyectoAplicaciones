@@ -1,32 +1,38 @@
 package com.example.proyectoaplicaciones.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.proyectoaplicaciones.data.model.LoginRequest
+import com.example.proyectoaplicaciones.data.model.UsuarioResponse
+import com.example.proyectoaplicaciones.data.remote.RetrofitInstance
 import com.example.proyectoaplicaciones.model.LoginErrores
 import com.example.proyectoaplicaciones.model.LoginUiState
+import com.example.proyectoaplicaciones.repository.UsuarioRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 // Administra la lógica y el estado de la pantalla de Login.
-class LoginViewModel : ViewModel() {
+class LoginViewModel(
+    private val usuarioRepository: UsuarioRepository =
+        UsuarioRepository(RetrofitInstance.api)
+) : ViewModel() {
 
-    // Estado privado que puede modificar el ViewModel.
     private val _estado = MutableStateFlow(LoginUiState())
-
-    // Estado público que observa la pantalla.
     val estado: StateFlow<LoginUiState> = _estado.asStateFlow()
 
-    // Actualiza el usuario y limpia sus errores.
+    // Actualiza el correo y limpia sus errores.
     fun onUsuarioChange(nuevoUsuario: String) {
         _estado.value = _estado.value.copy(
             usuario = nuevoUsuario,
             errores = _estado.value.errores.copy(
                 usuario = null,
                 credenciales = null
-            )
+            ),
+            usuarioAutenticado = null
         )
     }
 
@@ -37,29 +43,42 @@ class LoginViewModel : ViewModel() {
             errores = _estado.value.errores.copy(
                 contrasena = null,
                 credenciales = null
-            )
+            ),
+            usuarioAutenticado = null
         )
     }
 
-    // Valida las credenciales y muestra el estado de carga.
-    fun validarAcceso(alFinalizar: (Boolean) -> Unit) {
-
+    // Valida los datos y autentica al usuario en el backend.
+    fun validarAcceso(
+        alFinalizar: (UsuarioResponse?) -> Unit
+    ) {
         val actual = _estado.value
 
-        // Comprueba si los campos están vacíos.
-        val errorUsuario = if (actual.usuario.isBlank()) {
-            "Ingresa tu usuario"
-        } else {
-            null
+        // Evita solicitudes simultáneas.
+        if (actual.cargando) return
+
+        // Validación del correo.
+        val errorUsuario = when {
+            actual.usuario.isBlank() ->
+                "Ingresa tu correo"
+
+            !android.util.Patterns.EMAIL_ADDRESS
+                .matcher(actual.usuario.trim())
+                .matches() ->
+                "Ingresa un correo válido"
+
+            else -> null
         }
 
-        val errorContrasena = if (actual.contrasena.isBlank()) {
-            "Ingresa tu contraseña"
-        } else {
-            null
-        }
+        // Validación de la contraseña.
+        val errorContrasena =
+            if (actual.contrasena.isBlank()) {
+                "Ingresa tu contraseña"
+            } else {
+                null
+            }
 
-        // Si faltan datos, muestra los errores sin iniciar la carga.
+        // Si existen errores, no se consulta al backend.
         if (errorUsuario != null || errorContrasena != null) {
             _estado.value = actual.copy(
                 errores = LoginErrores(
@@ -68,42 +87,102 @@ class LoginViewModel : ViewModel() {
                 ),
                 cargando = false
             )
+
+            alFinalizar(null)
             return
         }
 
-        // Evita procesar varios intentos simultáneamente.
-        if (actual.cargando) return
-
-        // Activa el indicador de carga y limpia los errores anteriores.
+        // Activa el indicador de carga.
         _estado.value = actual.copy(
+            cargando = true,
             errores = LoginErrores(),
-            cargando = true
+            usuarioAutenticado = null
         )
 
         viewModelScope.launch {
-            // Permite que el usuario vea el indicador de carga.
-            delay(1500)
-
-            val accesoValido =
-                actual.usuario.trim().equals(
-                    "comercial@demo.cl",
-                    ignoreCase = true
-                ) && actual.contrasena == "Demo1234"
-
-            // Actualiza el estado y muestra el resultado.
-            _estado.value = _estado.value.copy(
-                cargando = false,
-                errores = LoginErrores(
-                    credenciales = if (accesoValido) {
-                        null
-                    } else {
-                        "Usuario o contraseña incorrectos"
-                    }
+            try {
+                // Prepara los datos de autenticación.
+                val solicitud = LoginRequest(
+                    correo = actual.usuario.trim(),
+                    password = actual.contrasena
                 )
-            )
 
-            // Informa a la pantalla si el ingreso fue correcto.
-            alFinalizar(accesoValido)
+                // Envía las credenciales al backend.
+                val respuesta =
+                    usuarioRepository.iniciarSesion(solicitud)
+
+                if (respuesta.isSuccessful && respuesta.body() != null) {
+
+                    // Obtiene el usuario autenticado.
+                    val usuario = respuesta.body()!!
+
+                    _estado.value = _estado.value.copy(
+                        cargando = false,
+                        errores = LoginErrores(),
+                        usuarioAutenticado = usuario
+                    )
+
+                    // Devuelve los datos del usuario.
+                    alFinalizar(usuario)
+
+                } else {
+
+                    // Maneja respuestas HTTP no exitosas.
+                    val mensaje = when (respuesta.code()) {
+                        400, 401, 403 ->
+                            "Correo o contraseña incorrectos"
+
+                        404 ->
+                            "No se encontró el servicio de autenticación"
+
+                        else ->
+                            "Error del servidor (${respuesta.code()})"
+                    }
+
+                    _estado.value = _estado.value.copy(
+                        cargando = false,
+                        errores = LoginErrores(
+                            credenciales = mensaje
+                        )
+                    )
+
+                    alFinalizar(null)
+                }
+
+            } catch (e: IOException) {
+
+                Log.e(
+                    "LoginViewModel",
+                    "Error de conexión con el backend",
+                    e
+                )
+
+                _estado.value = _estado.value.copy(
+                    cargando = false,
+                    errores = LoginErrores(
+                        credenciales = "No se pudo conectar con el servidor. Comprueba que esté iniciado."
+                    )
+                )
+
+                alFinalizar(null)
+
+            } catch (e: Exception) {
+
+                Log.e(
+                    "LoginViewModel",
+                    "Error inesperado durante el login",
+                    e
+                )
+
+                _estado.value = _estado.value.copy(
+                    cargando = false,
+                    errores = LoginErrores(
+                        credenciales = "Ocurrió un error al iniciar sesión."
+                    )
+                )
+
+                alFinalizar(null)
+            }
         }
     }
 }

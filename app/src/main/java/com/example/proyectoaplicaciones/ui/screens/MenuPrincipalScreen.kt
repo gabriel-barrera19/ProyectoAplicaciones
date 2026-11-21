@@ -28,7 +28,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.proyectoaplicaciones.data.model.UsuarioResponse
 
 /**
  * Menú principal de la aplicación.
@@ -36,6 +38,7 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuPrincipalScreen(
+    usuario: UsuarioResponse,
     alVerOportunidades: () -> Unit,
     alCerrarSesion: () -> Unit,
     alAbrirLectorQR: () -> Unit
@@ -128,27 +131,34 @@ fun MenuPrincipalScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingInterno)
-                    .padding(24.dp),
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 100.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Bienvenido",
-                    style = MaterialTheme.typography.headlineMedium
+                    text = "Bienvenido, ${usuario.nombre}",
+                    style = MaterialTheme.typography.headlineMedium,
+                    textAlign = TextAlign.Center
                 )
 
-                Spacer(
-                    modifier = Modifier.height(12.dp)
-                )
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Selecciona una opción para continuar.",
-                    style = MaterialTheme.typography.bodyLarge
+                    text = "Perfil: ${usuario.rol.replace("_", " ")}",
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = TextAlign.Center
                 )
 
-                Spacer(
-                    modifier = Modifier.height(24.dp)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = usuario.correo,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
                     onClick = alVerOportunidades,

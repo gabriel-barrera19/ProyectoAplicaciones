@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectoaplicaciones.viewmodel.LoginViewModel
+import com.example.proyectoaplicaciones.data.model.UsuarioResponse
 
 /**
  * Pantalla de inicio de sesión.
@@ -42,7 +43,7 @@ import com.example.proyectoaplicaciones.viewmodel.LoginViewModel
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
-    alLoginExitoso: () -> Unit
+    alLoginExitoso: (UsuarioResponse) -> Unit
 ) {
     // Observa el estado del Login y se actualiza cuando cambia.
     val estado by viewModel.estado.collectAsState()
@@ -161,9 +162,9 @@ fun LoginScreen(
                 // Botón que valida los datos y muestra la carga.
                 Button(
                     onClick = {
-                        viewModel.validarAcceso { accesoValido ->
-                            if (accesoValido) {
-                                alLoginExitoso()
+                        viewModel.validarAcceso { usuario ->
+                            if (usuario != null) {
+                                alLoginExitoso(usuario)
                             }
                         }
                     },
@@ -171,17 +172,12 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (estado.cargando) {
-
-                        // Círculo animado mientras se valida el acceso.
                         CircularProgressIndicator(
                             modifier = Modifier.height(20.dp),
                             strokeWidth = 2.dp,
                             color = MaterialTheme.colorScheme.onPrimaryFixed
                         )
-
                     } else {
-
-                        // Texto normal cuando no se está procesando.
                         Text("Ingresar")
                     }
                 }
