@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.proyectoaplicaciones.data.local.OrganizacionEntity
 import com.example.proyectoaplicaciones.model.OrganizacionUiState
+import com.example.proyectoaplicaciones.model.UsuarioLocal
 import com.example.proyectoaplicaciones.viewmodel.OrganizacionViewModel
 import kotlinx.coroutines.flow.collectLatest
 
@@ -24,12 +25,25 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun OrganizacionScreen(
     viewModel: OrganizacionViewModel,
+    usuario: UsuarioLocal,
     alVolver: () -> Unit
 ) {
     val estado by viewModel.estado.collectAsStateWithLifecycle()
     val organizaciones by viewModel.organizaciones.collectAsStateWithLifecycle()
 
+    // Identifica el perfil conectado.
+    val esEjecutivo = usuario.rol.equals(
+        "EJECUTIVO_COMERCIAL",
+        ignoreCase = true
+    )
+
+    val esSupervisor = usuario.rol.equals(
+        "SUPERVISOR_COMERCIAL",
+        ignoreCase = true
+    )
+
     var mostrarFormulario by remember { mutableStateOf(false) }
+
     var organizacionAEliminar by remember {
         mutableStateOf<OrganizacionEntity?>(null)
     }
@@ -65,7 +79,13 @@ fun OrganizacionScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Organizaciones")
+                    Text(
+                        if (esSupervisor) {
+                            "Consultar organizaciones"
+                        } else {
+                            "Organizaciones"
+                        }
+                    )
                 },
                 navigationIcon = {
                     TextButton(onClick = alVolver) {
@@ -75,7 +95,8 @@ fun OrganizacionScreen(
             )
         },
         floatingActionButton = {
-            if (!mostrarFormulario) {
+            // Solo el Ejecutivo puede registrar organizaciones.
+            if (esEjecutivo && !mostrarFormulario) {
                 FloatingActionButton(
                     onClick = {
                         viewModel.prepararNuevaOrganizacion()
@@ -91,7 +112,9 @@ fun OrganizacionScreen(
         }
     ) { padding ->
 
-        if (mostrarFormulario) {
+        // El formulario solo puede abrirse desde el perfil Ejecutivo.
+        if (esEjecutivo && mostrarFormulario) {
+
             FormularioOrganizacion(
                 estado = estado,
                 viewModel = viewModel,
@@ -103,8 +126,11 @@ fun OrganizacionScreen(
                     .fillMaxSize()
                     .padding(padding)
             )
+
         } else {
+
             if (organizaciones.isEmpty()) {
+
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -113,7 +139,9 @@ fun OrganizacionScreen(
                 ) {
                     Text("No hay organizaciones registradas.")
                 }
+
             } else {
+
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -121,11 +149,18 @@ fun OrganizacionScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+
                     item {
                         Text(
-                            text = "Organizaciones registradas",
+                            text = if (esSupervisor) {
+                                "Listado de organizaciones para supervisión"
+                            } else {
+                                "Organizaciones registradas"
+                            },
                             style = MaterialTheme.typography.titleLarge
                         )
+
+                        Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
                             text = "Total: ${organizaciones.size}",
@@ -137,14 +172,20 @@ fun OrganizacionScreen(
                         items = organizaciones,
                         key = { it.id }
                     ) { organizacion ->
+
                         OrganizacionItem(
                             organizacion = organizacion,
+                            puedeGestionar = esEjecutivo,
                             alEditar = {
-                                viewModel.iniciarEdicion(organizacion)
-                                mostrarFormulario = true
+                                if (esEjecutivo) {
+                                    viewModel.iniciarEdicion(organizacion)
+                                    mostrarFormulario = true
+                                }
                             },
                             alEliminar = {
-                                organizacionAEliminar = organizacion
+                                if (esEjecutivo) {
+                                    organizacionAEliminar = organizacion
+                                }
                             }
                         )
                     }
@@ -154,40 +195,43 @@ fun OrganizacionScreen(
     }
 
     // Confirmación antes de eliminar una organización.
-    organizacionAEliminar?.let { organizacion ->
-        AlertDialog(
-            onDismissRequest = {
-                organizacionAEliminar = null
-            },
-            title = {
-                Text("Eliminar organización")
-            },
-            text = {
-                Text(
-                    "¿Estás seguro de eliminar ${organizacion.nombre}? " +
-                            "También se eliminarán sus contactos asociados."
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.eliminarOrganizacion(organizacion)
-                        organizacionAEliminar = null
+    if (esEjecutivo) {
+        organizacionAEliminar?.let { organizacion ->
+
+            AlertDialog(
+                onDismissRequest = {
+                    organizacionAEliminar = null
+                },
+                title = {
+                    Text("Eliminar organización")
+                },
+                text = {
+                    Text(
+                        "¿Estás seguro de eliminar ${organizacion.nombre}? " +
+                                "También se eliminarán sus contactos asociados."
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.eliminarOrganizacion(organizacion)
+                            organizacionAEliminar = null
+                        }
+                    ) {
+                        Text("Eliminar")
                     }
-                ) {
-                    Text("Eliminar")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        organizacionAEliminar = null
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            organizacionAEliminar = null
+                        }
+                    ) {
+                        Text("Cancelar")
                     }
-                ) {
-                    Text("Cancelar")
                 }
-            }
-        )
+            )
+        }
     }
 
     // Ventana de resultado de las operaciones.
@@ -223,6 +267,7 @@ fun OrganizacionScreen(
 @Composable
 private fun OrganizacionItem(
     organizacion: OrganizacionEntity,
+    puedeGestionar: Boolean,
     alEditar: () -> Unit,
     alEliminar: () -> Unit
 ) {
@@ -233,6 +278,7 @@ private fun OrganizacionItem(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+
             Text(
                 text = organizacion.nombre,
                 style = MaterialTheme.typography.titleMedium
@@ -244,22 +290,27 @@ private fun OrganizacionItem(
             Text("Correo: ${organizacion.correo}")
             Text("Teléfono: ${organizacion.telefono}")
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                IconButton(onClick = alEditar) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Editar"
-                    )
-                }
+            // Los botones de gestión solo aparecen para el Ejecutivo.
+            if (puedeGestionar) {
 
-                IconButton(onClick = alEliminar) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Eliminar"
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+
+                    IconButton(onClick = alEditar) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editar"
+                        )
+                    }
+
+                    IconButton(onClick = alEliminar) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Eliminar"
+                        )
+                    }
                 }
             }
         }
@@ -280,6 +331,7 @@ private fun FormularioOrganizacion(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+
         Text(
             text = if (estado.esEdicion) {
                 "Editar organización"
@@ -389,6 +441,7 @@ private fun FormularioOrganizacion(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+
             OutlinedButton(
                 onClick = alCancelar,
                 modifier = Modifier.weight(1f)

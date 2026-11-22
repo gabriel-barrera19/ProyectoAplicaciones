@@ -32,9 +32,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.proyectoaplicaciones.model.UsuarioLocal
 
-/**
- * Menú principal de la aplicación.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuPrincipalScreen(
@@ -56,6 +53,17 @@ fun MenuPrincipalScreen(
     LaunchedEffect(Unit) {
         mostrarContenido = true
     }
+
+    // Identificación del perfil conectado.
+    val esEjecutivo = usuario.rol.equals(
+        "EJECUTIVO_COMERCIAL",
+        ignoreCase = true
+    )
+
+    val esSupervisor = usuario.rol.equals(
+        "SUPERVISOR_COMERCIAL",
+        ignoreCase = true
+    )
 
     Scaffold(
         topBar = {
@@ -81,35 +89,69 @@ fun MenuPrincipalScreen(
                             menuAbierto = false
                         }
                     ) {
-                        DropdownMenuItem(
-                            text = {
-                                Text("Gestión de oportunidades")
-                            },
-                            onClick = {
-                                menuAbierto = false
-                                alVerOportunidades()
-                            }
-                        )
+                        if (esEjecutivo) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Gestionar oportunidades")
+                                },
+                                onClick = {
+                                    menuAbierto = false
+                                    alVerOportunidades()
+                                }
+                            )
 
-                        DropdownMenuItem(
-                            text = {
-                                Text("Gestión de organizaciones")
-                            },
-                            onClick = {
-                                menuAbierto = false
-                                alVerOrganizaciones()
-                            }
-                        )
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Gestionar organizaciones")
+                                },
+                                onClick = {
+                                    menuAbierto = false
+                                    alVerOrganizaciones()
+                                }
+                            )
 
-                        DropdownMenuItem(
-                            text = {
-                                Text("Gestión de contactos")
-                            },
-                            onClick = {
-                                menuAbierto = false
-                                alVerContactos()
-                            }
-                        )
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Gestionar contactos")
+                                },
+                                onClick = {
+                                    menuAbierto = false
+                                    alVerContactos()
+                                }
+                            )
+                        }
+
+                        if (esSupervisor) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Consultar oportunidades")
+                                },
+                                onClick = {
+                                    menuAbierto = false
+                                    alVerOportunidades()
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Consultar organizaciones")
+                                },
+                                onClick = {
+                                    menuAbierto = false
+                                    alVerOrganizaciones()
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Consultar contactos")
+                                },
+                                onClick = {
+                                    menuAbierto = false
+                                    alVerContactos()
+                                }
+                            )
+                        }
 
                         DropdownMenuItem(
                             text = {
@@ -152,7 +194,7 @@ fun MenuPrincipalScreen(
                     .fillMaxSize()
                     .padding(paddingInterno)
                     .padding(horizontal = 24.dp)
-                    .padding(bottom = 100.dp),
+                    .padding(bottom = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -178,40 +220,76 @@ fun MenuPrincipalScreen(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                Button(
-                    onClick = alVerOportunidades,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Gestionar oportunidades")
+                // Opciones del Ejecutivo Comercial.
+                if (esEjecutivo) {
+                    Button(
+                        onClick = alVerOportunidades,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Gestionar oportunidades")
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = alVerOrganizaciones,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Gestionar organizaciones")
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = alVerContactos,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Gestionar contactos")
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                // Opciones del Supervisor Comercial.
+                if (esSupervisor) {
+                    Button(
+                        onClick = alVerOportunidades,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Consultar oportunidades")
+                    }
 
-                Button(
-                    onClick = alVerOrganizaciones,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Gestionar organizaciones")
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = alVerOrganizaciones,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Consultar organizaciones")
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = alVerContactos,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Consultar contactos")
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = alVerContactos,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Gestionar contactos")
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = alAbrirLectorQR,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Leer código QR")
+                // Lector QR disponible para ambos perfiles.
+                if (esEjecutivo || esSupervisor) {
+                    Button(
+                        onClick = alAbrirLectorQR,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Leer código QR")
+                    }
                 }
             }
         }

@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.example.proyectoaplicaciones.data.local.ContactoEntity
 import com.example.proyectoaplicaciones.data.local.OrganizacionEntity
 import com.example.proyectoaplicaciones.model.ContactoUiState
+import com.example.proyectoaplicaciones.model.UsuarioLocal
 import com.example.proyectoaplicaciones.viewmodel.ContactoViewModel
 import com.example.proyectoaplicaciones.viewmodel.OrganizacionViewModel
 import kotlinx.coroutines.flow.collect
@@ -25,12 +26,23 @@ import kotlinx.coroutines.flow.collect
 fun ContactoScreen(
     contactoViewModel: ContactoViewModel,
     organizacionViewModel: OrganizacionViewModel,
+    usuario: UsuarioLocal,
     alVolver: () -> Unit
 ) {
     val estado by contactoViewModel.estado.collectAsState()
     val contactos by contactoViewModel.contactos.collectAsState()
     val contactosFiltrados by contactoViewModel.contactosFiltrados.collectAsState()
     val organizaciones by organizacionViewModel.organizaciones.collectAsState()
+
+    val esEjecutivo = usuario.rol.equals(
+        "EJECUTIVO_COMERCIAL",
+        ignoreCase = true
+    )
+
+    val esSupervisor = usuario.rol.equals(
+        "SUPERVISOR_COMERCIAL",
+        ignoreCase = true
+    )
 
     var mostrarFormulario by remember { mutableStateOf(false) }
     var contactoEliminar by remember { mutableStateOf<ContactoEntity?>(null) }
@@ -52,7 +64,7 @@ fun ContactoScreen(
         }
     }
 
-    // Cierra el formulario solamente después de confirmar un guardado exitoso.
+    // Cierra el formulario después de un guardado exitoso.
     val aceptarResultado = {
         mensajeDialogo = null
 
@@ -87,7 +99,13 @@ fun ContactoScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Gestión de contactos")
+                    Text(
+                        if (esSupervisor) {
+                            "Consultar contactos"
+                        } else {
+                            "Gestión de contactos"
+                        }
+                    )
                 },
                 navigationIcon = {
                     TextButton(onClick = alVolver) {
@@ -97,238 +115,271 @@ fun ContactoScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    contactoViewModel.prepararNuevoContacto()
-                    mostrarFormulario = true
+            // Solo el Ejecutivo puede registrar contactos.
+            if (esEjecutivo && !mostrarFormulario) {
+                FloatingActionButton(
+                    onClick = {
+                        contactoViewModel.prepararNuevoContacto()
+                        mostrarFormulario = true
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Nuevo contacto"
+                    )
                 }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Nuevo contacto"
-                )
             }
         }
     ) { padding ->
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-            OutlinedTextField(
-                value = busqueda,
-                onValueChange = { valor ->
-                    busqueda = valor
+        if (esEjecutivo && mostrarFormulario) {
 
-                    if (valor.isNotBlank()) {
-                        contactoViewModel.buscarContactos(valor)
-                        filtroActivo = true
-                    } else if (filtroOrganizacionId == null) {
-                        contactoViewModel.limpiarFiltro()
-                        filtroActivo = false
-                    } else {
-                        contactoViewModel.obtenerContactosPorOrganizacion(
-                            filtroOrganizacionId!!
-                        )
-                        filtroActivo = true
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                label = {
-                    Text("Buscar contacto por nombre")
-                },
-                singleLine = true
+            FormularioContacto(
+                estado = estado,
+                organizaciones = organizaciones,
+                onNombreChange = contactoViewModel::onNombreChange,
+                onCargoChange = contactoViewModel::onCargoChange,
+                onCorreoChange = contactoViewModel::onCorreoChange,
+                onTelefonoChange = contactoViewModel::onTelefonoChange,
+                onOrganizacionChange = contactoViewModel::onOrganizacionChange,
+                onGuardar = contactoViewModel::guardarContacto,
+                onCancelar = {
+                    contactoViewModel.prepararNuevoContacto()
+                    mostrarFormulario = false
+                }
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+        } else {
 
-            var desplegarFiltro by remember {
-                mutableStateOf(false)
-            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp)
+            ) {
 
-            Column {
-                OutlinedTextField(
-                    value = filtroOrganizacionId?.let { id ->
-                        organizaciones.find { it.id == id }?.nombre
-                    } ?: "Todas las organizaciones",
-                    onValueChange = {},
-                    modifier = Modifier.fillMaxWidth(),
-                    readOnly = true,
-                    label = {
-                        Text("Filtrar por organización")
-                    }
+                Text(
+                    text = if (esSupervisor) {
+                        "Listado de contactos para supervisión"
+                    } else {
+                        "Contactos registrados"
+                    },
+                    style = MaterialTheme.typography.titleMedium
                 )
 
-                TextButton(
-                    onClick = {
-                        desplegarFiltro = true
-                    }
-                ) {
-                    Text("Seleccionar organización")
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = busqueda,
+                    onValueChange = { valor ->
+                        busqueda = valor
+
+                        if (valor.isNotBlank()) {
+                            contactoViewModel.buscarContactos(valor)
+                            filtroActivo = true
+                        } else if (filtroOrganizacionId == null) {
+                            contactoViewModel.limpiarFiltro()
+                            filtroActivo = false
+                        } else {
+                            contactoViewModel.obtenerContactosPorOrganizacion(
+                                filtroOrganizacionId!!
+                            )
+                            filtroActivo = true
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text("Buscar contacto por nombre")
+                    },
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                var desplegarFiltro by remember {
+                    mutableStateOf(false)
                 }
 
-                DropdownMenu(
-                    expanded = desplegarFiltro,
-                    onDismissRequest = {
-                        desplegarFiltro = false
-                    }
-                ) {
-                    DropdownMenuItem(
-                        text = {
-                            Text("Todas las organizaciones")
-                        },
-                        onClick = {
-                            filtroOrganizacionId = null
-                            desplegarFiltro = false
-
-                            if (busqueda.isNotBlank()) {
-                                contactoViewModel.buscarContactos(busqueda)
-                                filtroActivo = true
-                            } else {
-                                contactoViewModel.limpiarFiltro()
-                                filtroActivo = false
-                            }
+                Column {
+                    OutlinedTextField(
+                        value = filtroOrganizacionId?.let { id ->
+                            organizaciones.find { it.id == id }?.nombre
+                        } ?: "Todas las organizaciones",
+                        onValueChange = {},
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true,
+                        label = {
+                            Text("Filtrar por organización")
                         }
                     )
 
-                    organizaciones.forEach { organizacion ->
+                    TextButton(
+                        onClick = {
+                            desplegarFiltro = true
+                        }
+                    ) {
+                        Text("Seleccionar organización")
+                    }
+
+                    DropdownMenu(
+                        expanded = desplegarFiltro,
+                        onDismissRequest = {
+                            desplegarFiltro = false
+                        }
+                    ) {
                         DropdownMenuItem(
                             text = {
-                                Text(organizacion.nombre)
+                                Text("Todas las organizaciones")
                             },
                             onClick = {
-                                filtroOrganizacionId = organizacion.id
+                                filtroOrganizacionId = null
                                 desplegarFiltro = false
 
-                                contactoViewModel.obtenerContactosPorOrganizacion(
-                                    organizacion.id
-                                )
-                                filtroActivo = true
+                                if (busqueda.isNotBlank()) {
+                                    contactoViewModel.buscarContactos(busqueda)
+                                    filtroActivo = true
+                                } else {
+                                    contactoViewModel.limpiarFiltro()
+                                    filtroActivo = false
+                                }
                             }
                         )
+
+                        organizaciones.forEach { organizacion ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(organizacion.nombre)
+                                },
+                                onClick = {
+                                    filtroOrganizacionId = organizacion.id
+                                    desplegarFiltro = false
+
+                                    contactoViewModel.obtenerContactosPorOrganizacion(
+                                        organizacion.id
+                                    )
+                                    filtroActivo = true
+                                }
+                            )
+                        }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            if (listaFinal.isEmpty()) {
-                Text(
-                    text = if (organizaciones.isEmpty()) {
-                        "Primero debes registrar una organización."
-                    } else {
-                        "No hay contactos para mostrar."
-                    },
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(12.dp)
-                )
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(
-                        items = listaFinal,
-                        key = { it.id }
-                    ) { contacto ->
-                        ContactoCard(
-                            contacto = contacto,
-                            organizaciones = organizaciones,
-                            onEditar = {
-                                contactoViewModel.iniciarEdicion(contacto)
-                                mostrarFormulario = true
-                            },
-                            onEliminar = {
-                                contactoEliminar = contacto
-                            }
-                        )
+                if (listaFinal.isEmpty()) {
+
+                    Text(
+                        text = if (organizaciones.isEmpty()) {
+                            "Primero debes registrar una organización."
+                        } else {
+                            "No hay contactos para mostrar."
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(12.dp)
+                    )
+
+                } else {
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(
+                            items = listaFinal,
+                            key = { it.id }
+                        ) { contacto ->
+
+                            ContactoCard(
+                                contacto = contacto,
+                                organizaciones = organizaciones,
+                                puedeGestionar = esEjecutivo,
+                                onEditar = {
+                                    if (esEjecutivo) {
+                                        contactoViewModel.iniciarEdicion(contacto)
+                                        mostrarFormulario = true
+                                    }
+                                },
+                                onEliminar = {
+                                    if (esEjecutivo) {
+                                        contactoEliminar = contacto
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             }
         }
     }
 
-    // Formulario de registro y edición.
-    if (mostrarFormulario) {
-        FormularioContacto(
-            estado = estado,
-            organizaciones = organizaciones,
-            onNombreChange = contactoViewModel::onNombreChange,
-            onCargoChange = contactoViewModel::onCargoChange,
-            onCorreoChange = contactoViewModel::onCorreoChange,
-            onTelefonoChange = contactoViewModel::onTelefonoChange,
-            onOrganizacionChange = contactoViewModel::onOrganizacionChange,
-            onGuardar = contactoViewModel::guardarContacto,
-            onCancelar = {
-                contactoViewModel.prepararNuevoContacto()
-                mostrarFormulario = false
-            }
-        )
-    }
-
     // Confirmación antes de eliminar.
-    contactoEliminar?.let { contacto ->
-        AlertDialog(
-            onDismissRequest = {
-                contactoEliminar = null
-            },
-            title = {
-                Text("Eliminar contacto")
-            },
-            text = {
-                Text(
-                    "¿Estás seguro de que deseas eliminar a ${contacto.nombre}?"
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        contactoViewModel.eliminarContacto(contacto)
-                        contactoEliminar = null
+    if (esEjecutivo) {
+        contactoEliminar?.let { contacto ->
+            AlertDialog(
+                onDismissRequest = {
+                    contactoEliminar = null
+                },
+                title = {
+                    Text("Eliminar contacto")
+                },
+                text = {
+                    Text(
+                        "¿Estás seguro de que deseas eliminar a ${contacto.nombre}?"
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            contactoViewModel.eliminarContacto(contacto)
+                            contactoEliminar = null
+                        }
+                    ) {
+                        Text("Eliminar")
                     }
-                ) {
-                    Text("Eliminar")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        contactoEliminar = null
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            contactoEliminar = null
+                        }
+                    ) {
+                        Text("Cancelar")
                     }
-                ) {
-                    Text("Cancelar")
                 }
-            }
-        )
+            )
+        }
     }
 
     // Ventana de confirmación del resultado.
-    mensajeDialogo?.let { mensaje ->
-        val esError = mensaje.contains("error", ignoreCase = true)
+    if (esEjecutivo) {
+        mensajeDialogo?.let { mensaje ->
+            val esError = mensaje.contains("error", ignoreCase = true)
 
-        AlertDialog(
-            onDismissRequest = aceptarResultado,
-            title = {
-                Text(
-                    if (esError) {
-                        "No se pudo completar la operación"
-                    } else {
-                        "Operación exitosa"
+            AlertDialog(
+                onDismissRequest = aceptarResultado,
+                title = {
+                    Text(
+                        if (esError) {
+                            "No se pudo completar la operación"
+                        } else {
+                            "Operación exitosa"
+                        }
+                    )
+                },
+                text = {
+                    Text(mensaje)
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = aceptarResultado
+                    ) {
+                        Text("Aceptar")
                     }
-                )
-            },
-            text = {
-                Text(mensaje)
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = aceptarResultado
-                ) {
-                    Text("Aceptar")
                 }
-            }
-        )
+            )
+        }
     }
 }
 
@@ -336,6 +387,7 @@ fun ContactoScreen(
 private fun ContactoCard(
     contacto: ContactoEntity,
     organizaciones: List<OrganizacionEntity>,
+    puedeGestionar: Boolean,
     onEditar: () -> Unit,
     onEliminar: () -> Unit
 ) {
@@ -347,7 +399,8 @@ private fun ContactoCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
                 text = contacto.nombre,
@@ -359,22 +412,25 @@ private fun ContactoCard(
             Text("Teléfono: ${contacto.telefono}")
             Text("Organización: ${organizacion?.nombre ?: "No disponible"}")
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                IconButton(onClick = onEditar) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "Editar contacto"
-                    )
-                }
+            // Acciones exclusivas del Ejecutivo.
+            if (puedeGestionar) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    IconButton(onClick = onEditar) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Editar contacto"
+                        )
+                    }
 
-                IconButton(onClick = onEliminar) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Eliminar contacto"
-                    )
+                    IconButton(onClick = onEliminar) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Eliminar contacto"
+                        )
+                    }
                 }
             }
         }

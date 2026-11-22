@@ -14,41 +14,35 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     entities = [
         OportunidadEntity::class,
         OrganizacionEntity::class,
-        ContactoEntity::class
+        ContactoEntity::class,
+        SeguimientoEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
-    // Acceso a las operaciones de oportunidades.
     abstract fun oportunidadDao(): OportunidadDao
 
-    // Acceso a las operaciones de organizaciones.
     abstract fun organizacionDao(): OrganizacionDao
 
-    // Acceso a las operaciones de contactos.
     abstract fun contactoDao(): ContactoDao
+
+    abstract fun seguimientoDao(): SeguimientoDao
 
     companion object {
 
-        // Migración de la versión 1 a la versión 2.
         private val MIGRATION_1_2 = object : Migration(1, 2) {
-
             override fun migrate(database: SupportSQLiteDatabase) {
-
                 database.execSQL(
                     "ALTER TABLE oportunidades ADD COLUMN fecha TEXT NOT NULL DEFAULT ''"
                 )
             }
         }
 
-        // Migración de la versión 2 a la versión 3.
         private val MIGRATION_2_3 = object : Migration(2, 3) {
-
             override fun migrate(database: SupportSQLiteDatabase) {
 
-                // Crea la tabla de organizaciones.
                 database.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS organizaciones (
@@ -66,7 +60,6 @@ abstract class AppDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
 
-                // Crea la tabla de contactos.
                 database.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS contactos (
@@ -84,7 +77,6 @@ abstract class AppDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
 
-                // Crea un índice para buscar contactos por organización.
                 database.execSQL(
                     """
                     CREATE INDEX IF NOT EXISTS index_contactos_organizacionId
@@ -94,7 +86,37 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        // Conserva una única instancia de la base de datos.
+        // Migración de la versión 3 a la versión 4.
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+
+            override fun migrate(database: SupportSQLiteDatabase) {
+
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS seguimientos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        oportunidadId INTEGER NOT NULL,
+                        fecha TEXT NOT NULL,
+                        tipoGestion TEXT NOT NULL,
+                        resultado TEXT NOT NULL,
+                        observaciones TEXT NOT NULL,
+                        FOREIGN KEY(oportunidadId)
+                        REFERENCES oportunidades(id)
+                        ON UPDATE NO ACTION
+                        ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+
+                database.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS index_seguimientos_oportunidadId
+                    ON seguimientos(oportunidadId)
+                    """.trimIndent()
+                )
+            }
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -107,10 +129,10 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "oportunidades_db"
                 )
-                    // Aplica las migraciones sin eliminar los datos existentes.
                     .addMigrations(
                         MIGRATION_1_2,
-                        MIGRATION_2_3
+                        MIGRATION_2_3,
+                        MIGRATION_3_4
                     )
                     .build()
                     .also {
