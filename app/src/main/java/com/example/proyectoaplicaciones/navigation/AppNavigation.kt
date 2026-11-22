@@ -446,6 +446,7 @@ fun AppNavigation() {
                 ContactoScreen(
                     contactoViewModel = contactoViewModel,
                     organizacionViewModel = organizacionViewModel,
+                    usuario = usuario,
                     alVolver = {
                         navController.popBackStack()
                     }
