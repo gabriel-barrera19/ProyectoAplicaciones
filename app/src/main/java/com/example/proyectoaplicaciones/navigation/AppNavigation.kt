@@ -13,7 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.proyectoaplicaciones.data.local.AppDatabase
-import com.example.proyectoaplicaciones.data.model.UsuarioResponse
+import com.example.proyectoaplicaciones.model.UsuarioLocal
 import com.example.proyectoaplicaciones.repository.OportunidadRepository
 import com.example.proyectoaplicaciones.ui.screens.ListaOportunidadesScreen
 import com.example.proyectoaplicaciones.ui.screens.LoginScreen
@@ -41,7 +41,7 @@ fun AppNavigation() {
 
     // Conserva los datos del usuario autenticado durante la sesión.
     var usuarioAutenticado by remember {
-        mutableStateOf<UsuarioResponse?>(null)
+        mutableStateOf<UsuarioLocal?>(null)
     }
 
     // Obtiene el contexto de Android.

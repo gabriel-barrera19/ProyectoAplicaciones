@@ -1,6 +1,4 @@
 package com.example.proyectoaplicaciones.model
-import com.example.proyectoaplicaciones.data.model.UsuarioResponse
-
 // Representa el estado actual de la pantalla de Login.
 data class LoginUiState(
 
@@ -17,5 +15,5 @@ data class LoginUiState(
     val cargando: Boolean = false,
 
     // Datos del usuario que inició sesión correctamente.
-    val usuarioAutenticado: UsuarioResponse? = null
+    val usuarioAutenticado: UsuarioLocal? = null
 )

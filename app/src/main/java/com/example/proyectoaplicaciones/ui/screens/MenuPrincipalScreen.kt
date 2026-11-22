@@ -30,7 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.proyectoaplicaciones.data.model.UsuarioResponse
+import com.example.proyectoaplicaciones.model.UsuarioLocal
 
 /**
  * Menú principal de la aplicación.
@@ -38,7 +38,7 @@ import com.example.proyectoaplicaciones.data.model.UsuarioResponse
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuPrincipalScreen(
-    usuario: UsuarioResponse,
+    usuario: UsuarioLocal,
     alVerOportunidades: () -> Unit,
     alCerrarSesion: () -> Unit,
     alAbrirLectorQR: () -> Unit

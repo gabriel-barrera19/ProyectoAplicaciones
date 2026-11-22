@@ -32,7 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectoaplicaciones.viewmodel.LoginViewModel
-import com.example.proyectoaplicaciones.data.model.UsuarioResponse
+import com.example.proyectoaplicaciones.model.UsuarioLocal
 
 /**
  * Pantalla de inicio de sesión.
@@ -43,7 +43,7 @@ import com.example.proyectoaplicaciones.data.model.UsuarioResponse
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
-    alLoginExitoso: (UsuarioResponse) -> Unit
+    alLoginExitoso: (UsuarioLocal) -> Unit
 ) {
     // Observa el estado del Login y se actualiza cuando cambia.
     val estado by viewModel.estado.collectAsState()
