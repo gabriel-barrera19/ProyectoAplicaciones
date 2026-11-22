@@ -14,87 +14,134 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.proyectoaplicaciones.data.local.AppDatabase
 import com.example.proyectoaplicaciones.model.UsuarioLocal
+import com.example.proyectoaplicaciones.repository.ContactoRepository
 import com.example.proyectoaplicaciones.repository.OportunidadRepository
+import com.example.proyectoaplicaciones.repository.OrganizacionRepository
+import com.example.proyectoaplicaciones.ui.screens.ContactoScreen
 import com.example.proyectoaplicaciones.ui.screens.ListaOportunidadesScreen
 import com.example.proyectoaplicaciones.ui.screens.LoginScreen
 import com.example.proyectoaplicaciones.ui.screens.MenuPrincipalScreen
 import com.example.proyectoaplicaciones.ui.screens.OportunidadFormScreen
+import com.example.proyectoaplicaciones.ui.screens.OrganizacionScreen
 import com.example.proyectoaplicaciones.ui.screens.QrScannerScreen
+import com.example.proyectoaplicaciones.viewmodel.ContactoViewModel
 import com.example.proyectoaplicaciones.viewmodel.LoginViewModel
 import com.example.proyectoaplicaciones.viewmodel.OportunidadViewModel
+import com.example.proyectoaplicaciones.viewmodel.OrganizacionViewModel
 
-// Define las rutas de navegación.
 object Rutas {
     const val LOGIN = "login"
     const val MENU = "menu"
     const val INICIO = "inicio"
     const val FORMULARIO = "formulario"
     const val LECTOR_QR = "lector_qr"
+    const val ORGANIZACIONES = "organizaciones"
+    const val CONTACTOS = "contactos"
 }
 
-// Configura la navegación y las dependencias.
 @Composable
 fun AppNavigation() {
 
-    // Controla la navegación entre pantallas.
     val navController = rememberNavController()
 
-    // Conserva los datos del usuario autenticado durante la sesión.
     var usuarioAutenticado by remember {
         mutableStateOf<UsuarioLocal?>(null)
     }
 
-    // Obtiene el contexto de Android.
     val context = LocalContext.current
 
-    // Obtiene la base de datos local.
+    // Base de datos local.
     val database = AppDatabase.obtenerInstancia(context)
 
-    // Crea el repositorio de oportunidades.
-    val repository = OportunidadRepository(database.oportunidadDao())
+    // Repositorios.
+    val oportunidadRepository = OportunidadRepository(
+        database.oportunidadDao()
+    )
 
-    // Permite crear el ViewModel con su repositorio.
+    val organizacionRepository = OrganizacionRepository(
+        database.organizacionDao()
+    )
+
+    val contactoRepository = ContactoRepository(
+        database.contactoDao()
+    )
+
+    // Fábrica para crear los ViewModels.
     val factory = object : ViewModelProvider.Factory {
+
         override fun <T : ViewModel> create(
             modelClass: Class<T>
         ): T {
+
             if (
                 modelClass.isAssignableFrom(
                     OportunidadViewModel::class.java
                 )
             ) {
                 @Suppress("UNCHECKED_CAST")
-                return OportunidadViewModel(repository) as T
+                return OportunidadViewModel(
+                    oportunidadRepository
+                ) as T
             }
 
-            throw IllegalArgumentException("ViewModel desconocido")
+            if (
+                modelClass.isAssignableFrom(
+                    OrganizacionViewModel::class.java
+                )
+            ) {
+                @Suppress("UNCHECKED_CAST")
+                return OrganizacionViewModel(
+                    organizacionRepository
+                ) as T
+            }
+
+            if (
+                modelClass.isAssignableFrom(
+                    ContactoViewModel::class.java
+                )
+            ) {
+                @Suppress("UNCHECKED_CAST")
+                return ContactoViewModel(
+                    contactoRepository
+                ) as T
+            }
+
+            throw IllegalArgumentException(
+                "ViewModel desconocido"
+            )
         }
     }
 
-    // Comparte el ViewModel entre la lista y el formulario.
+    // ViewModels.
     val oportunidadViewModel: OportunidadViewModel = viewModel(
+        key = "OportunidadViewModel",
         factory = factory
     )
 
-    // Define las pantallas de la aplicación.
+    val organizacionViewModel: OrganizacionViewModel = viewModel(
+        key = "OrganizacionViewModel",
+        factory = factory
+    )
+
+    val contactoViewModel: ContactoViewModel = viewModel(
+        key = "ContactoViewModel",
+        factory = factory
+    )
+
     NavHost(
         navController = navController,
         startDestination = Rutas.LOGIN
     ) {
 
-        // Pantalla de inicio de sesión.
+        // Inicio de sesión.
         composable(Rutas.LOGIN) {
-
             val loginViewModel: LoginViewModel = viewModel()
 
             LoginScreen(
                 viewModel = loginViewModel,
                 alLoginExitoso = { usuario ->
-
-                    // Guarda los datos del usuario autenticado.
                     usuarioAutenticado = usuario
 
-                    // Navega al menú principal.
                     navController.navigate(Rutas.MENU) {
                         popUpTo(Rutas.LOGIN) {
                             inclusive = true
@@ -105,14 +152,12 @@ fun AppNavigation() {
             )
         }
 
-        // Menú principal después de iniciar sesión.
+        // Menú principal.
         composable(Rutas.MENU) {
-
             val usuario = usuarioAutenticado
 
             if (usuario == null) {
 
-                // Impide acceder al menú sin autenticación.
                 navController.navigate(Rutas.LOGIN) {
                     popUpTo(Rutas.MENU) {
                         inclusive = true
@@ -129,9 +174,15 @@ fun AppNavigation() {
                         navController.navigate(Rutas.INICIO)
                     },
 
-                    alCerrarSesion = {
+                    alVerOrganizaciones = {
+                        navController.navigate(Rutas.ORGANIZACIONES)
+                    },
 
-                        // Limpia los datos de la sesión.
+                    alVerContactos = {
+                        navController.navigate(Rutas.CONTACTOS)
+                    },
+
+                    alCerrarSesion = {
                         usuarioAutenticado = null
 
                         navController.navigate(Rutas.LOGIN) {
@@ -149,25 +200,21 @@ fun AppNavigation() {
             }
         }
 
-        // Lista de oportunidades comerciales.
+        // Lista de oportunidades.
         composable(Rutas.INICIO) {
-
             ListaOportunidadesScreen(
                 viewModel = oportunidadViewModel,
 
-                // Abre el formulario para registrar una oportunidad.
                 alRegistrarOportunidad = {
                     oportunidadViewModel.prepararNuevaOportunidad()
                     navController.navigate(Rutas.FORMULARIO)
                 },
 
-                // Abre el formulario para editar una oportunidad.
                 alEditarOportunidad = { oportunidad ->
                     oportunidadViewModel.iniciarEdicion(oportunidad)
                     navController.navigate(Rutas.FORMULARIO)
                 },
 
-                // Regresa al menú principal.
                 alIrMenuPrincipal = {
                     navController.navigate(Rutas.MENU) {
                         popUpTo(Rutas.MENU) {
@@ -177,7 +224,6 @@ fun AppNavigation() {
                     }
                 },
 
-                // Cierra la sesión y limpia las pantallas anteriores.
                 alCerrarSesion = {
                     usuarioAutenticado = null
 
@@ -191,32 +237,27 @@ fun AppNavigation() {
             )
         }
 
-        // Formulario para registrar o editar una oportunidad.
+        // Formulario de oportunidades.
         composable(Rutas.FORMULARIO) {
-
             OportunidadFormScreen(
                 viewModel = oportunidadViewModel,
 
-                // Regresa a la pantalla anterior.
                 alVolver = {
                     navController.popBackStack()
                 },
 
-                // Navega al menú principal.
                 alIrMenuPrincipal = {
                     navController.navigate(Rutas.MENU) {
                         launchSingleTop = true
                     }
                 },
 
-                // Navega a la lista de oportunidades.
                 alVerOportunidades = {
                     navController.navigate(Rutas.INICIO) {
                         launchSingleTop = true
                     }
                 },
 
-                // Cierra la sesión y vuelve al Login.
                 alCerrarSesion = {
                     usuarioAutenticado = null
 
@@ -230,10 +271,30 @@ fun AppNavigation() {
             )
         }
 
-        // Pantalla del lector QR.
+        // Lector QR.
         composable(Rutas.LECTOR_QR) {
-
             QrScannerScreen(
+                alVolver = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Módulo de organizaciones.
+        composable(Rutas.ORGANIZACIONES) {
+            OrganizacionScreen(
+                viewModel = organizacionViewModel,
+                alVolver = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Módulo de contactos.
+        composable(Rutas.CONTACTOS) {
+            ContactoScreen(
+                contactoViewModel = contactoViewModel,
+                organizacionViewModel = organizacionViewModel,
                 alVolver = {
                     navController.popBackStack()
                 }

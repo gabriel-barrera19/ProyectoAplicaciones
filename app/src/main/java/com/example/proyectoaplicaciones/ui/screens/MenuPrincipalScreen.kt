@@ -40,20 +40,19 @@ import com.example.proyectoaplicaciones.model.UsuarioLocal
 fun MenuPrincipalScreen(
     usuario: UsuarioLocal,
     alVerOportunidades: () -> Unit,
+    alVerOrganizaciones: () -> Unit,
+    alVerContactos: () -> Unit,
     alCerrarSesion: () -> Unit,
     alAbrirLectorQR: () -> Unit
 ) {
-    // Controla si el menú desplegable está abierto.
     var menuAbierto by remember {
         mutableStateOf(false)
     }
 
-    // Controla la aparición animada del contenido.
     var mostrarContenido by remember {
         mutableStateOf(false)
     }
 
-    // Activa la animación cuando se muestra la pantalla.
     LaunchedEffect(Unit) {
         mostrarContenido = true
     }
@@ -94,6 +93,26 @@ fun MenuPrincipalScreen(
 
                         DropdownMenuItem(
                             text = {
+                                Text("Gestión de organizaciones")
+                            },
+                            onClick = {
+                                menuAbierto = false
+                                alVerOrganizaciones()
+                            }
+                        )
+
+                        DropdownMenuItem(
+                            text = {
+                                Text("Gestión de contactos")
+                            },
+                            onClick = {
+                                menuAbierto = false
+                                alVerContactos()
+                            }
+                        )
+
+                        DropdownMenuItem(
+                            text = {
                                 Text("Leer código QR")
                             },
                             onClick = {
@@ -117,14 +136,15 @@ fun MenuPrincipalScreen(
         }
     ) { paddingInterno ->
 
-        // Muestra el contenido con una animación de entrada.
         AnimatedVisibility(
             visible = mostrarContenido,
             enter = fadeIn(
                 animationSpec = tween(durationMillis = 600)
             ) + slideInVertically(
                 animationSpec = tween(durationMillis = 600),
-                initialOffsetY = { altura -> altura / 8 }
+                initialOffsetY = { altura ->
+                    altura / 8
+                }
             )
         ) {
             Column(
@@ -167,9 +187,25 @@ fun MenuPrincipalScreen(
                     Text("Gestionar oportunidades")
                 }
 
-                Spacer(
-                    modifier = Modifier.height(12.dp)
-                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = alVerOrganizaciones,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Gestionar organizaciones")
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = alVerContactos,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Gestionar contactos")
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
                     onClick = alAbrirLectorQR,
