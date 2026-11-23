@@ -18,7 +18,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SeguimientoEntity::class,
         EventoEntity::class
     ],
-    version = 8,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

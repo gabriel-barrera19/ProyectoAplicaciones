@@ -12,26 +12,8 @@ navigationCompose = "2.7.7"
 room = "2.7.2"
 lifecycleViewmodelCompose = "2.9.2"
 retrofit = "2.11.0"
-kotest = "5.8.0"
-junit5 = "5.10.0"
-mockk = "1.13.10"
-coroutinesTest = "1.10.2"
 
 [libraries]
-# Kotest
-kotest-runner = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "kotest" }
-kotest-assertions = { group = "io.kotest", name = "kotest-assertions-core", version.ref = "kotest" }
-
-
-# JUnit 5
-junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit5" }
-junit-vintage = { group = "org.junit.vintage", name = "junit-vintage-engine", version.ref = "junit5" }
-
-# MockK
-mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
-
-# Corrutinas
-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

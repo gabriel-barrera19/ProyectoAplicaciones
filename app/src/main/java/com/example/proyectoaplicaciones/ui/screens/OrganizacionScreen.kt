@@ -455,7 +455,6 @@ private fun FormularioOrganizacion(
             modifier = Modifier.fillMaxWidth()
         )
 
-
         OutlinedTextField(
             value = estado.descripcion,
             onValueChange = viewModel::onDescripcionChange,
