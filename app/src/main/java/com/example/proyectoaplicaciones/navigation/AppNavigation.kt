@@ -418,8 +418,19 @@ fun AppNavigation() {
         composable(Rutas.LECTOR_QR) {
 
             QrScannerScreen(
+                oportunidadViewModel = oportunidadViewModel,
+
                 alVolver = {
                     navController.popBackStack()
+                },
+
+                alOportunidadCargada = {
+                    navController.navigate(Rutas.FORMULARIO) {
+                        popUpTo(Rutas.LECTOR_QR) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
                 }
             )
         }

@@ -23,8 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -32,19 +32,22 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectoaplicaciones.viewmodel.QrViewModel
+import com.example.proyectoaplicaciones.viewmodel.OportunidadViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QrScannerScreen(
     alVolver: () -> Unit,
+    alOportunidadCargada: () -> Unit,
+    oportunidadViewModel: OportunidadViewModel,
     qrViewModel: QrViewModel = viewModel()
 ) {
     val contexto = LocalContext.current
 
-    // Observa el resultado del código QR.
     val resultado by qrViewModel.resultadoQr.collectAsState()
+    val oportunidadQr by qrViewModel.oportunidadQr.collectAsState()
+    val mensajeError by qrViewModel.mensajeError.collectAsState()
 
-    // Comprueba si el permiso de cámara ya fue concedido.
     val permisoInicial = remember {
         ContextCompat.checkSelfPermission(
             contexto,
@@ -52,22 +55,27 @@ fun QrScannerScreen(
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // Guarda el estado actual del permiso.
     var permisoConcedido by remember {
         mutableStateOf(permisoInicial)
     }
 
-    // Solicita permiso y actualiza el estado según la respuesta.
     val solicitarPermiso = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { concedido ->
         permisoConcedido = concedido
     }
 
-    // Solicita el permiso automáticamente al abrir la pantalla.
     LaunchedEffect(Unit) {
         if (!permisoConcedido) {
             solicitarPermiso.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    // Cuando el QR es válido, carga los datos y abre el formulario.
+    LaunchedEffect(oportunidadQr) {
+        oportunidadQr?.let { oportunidad ->
+            oportunidadViewModel.cargarOportunidadDesdeQr(oportunidad)
+            alOportunidadCargada()
         }
     }
 
@@ -78,9 +86,7 @@ fun QrScannerScreen(
                     Text("Lector de códigos QR")
                 },
                 navigationIcon = {
-                    TextButton(
-                        onClick = alVolver
-                    ) {
+                    TextButton(onClick = alVolver) {
                         Text("Volver")
                     }
                 }
@@ -95,6 +101,7 @@ fun QrScannerScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+
             if (permisoConcedido) {
 
                 Text(
@@ -102,7 +109,6 @@ fun QrScannerScreen(
                     style = MaterialTheme.typography.bodyLarge
                 )
 
-                // Espacio donde se muestra la cámara.
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -122,31 +128,33 @@ fun QrScannerScreen(
                     )
 
                     Text(
-                        text = resultado,
+                        text = mensajeError.ifBlank {
+                            "Código QR leído. Procesando información..."
+                        },
                         style = MaterialTheme.typography.bodyLarge
                     )
 
-                    Button(
-                        onClick = qrViewModel::limpiarResultado,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Limpiar resultado")
+                    if (mensajeError.isNotBlank()) {
+                        Button(
+                            onClick = qrViewModel::limpiarResultado,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Intentar nuevamente")
+                        }
                     }
                 }
+
             } else {
+
                 Text(
                     text = "Necesitamos permiso para usar la cámara y leer códigos QR."
                 )
 
-                Spacer(
-                    modifier = Modifier.height(8.dp)
-                )
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
                     onClick = {
-                        solicitarPermiso.launch(
-                            Manifest.permission.CAMERA
-                        )
+                        solicitarPermiso.launch(Manifest.permission.CAMERA)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {

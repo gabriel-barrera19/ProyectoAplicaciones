@@ -148,6 +148,15 @@ class OportunidadViewModel(
         _estado.value = OportunidadUiState()
     }
 
+    fun cargarOportunidadDesdeQr(oportunidadQr: OportunidadUiState) {
+        idOportunidadEditando = null
+
+        _estado.value = oportunidadQr.copy(
+            errores = OportunidadErrores(),
+            esEdicion = false
+        )
+    }
+
     // Carga los datos de una oportunidad seleccionada para editarla.
     fun iniciarEdicion(oportunidad: OportunidadEntity) {
         idOportunidadEditando = oportunidad.id
