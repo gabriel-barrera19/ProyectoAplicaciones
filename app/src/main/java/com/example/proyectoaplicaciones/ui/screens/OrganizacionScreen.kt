@@ -26,12 +26,15 @@ import kotlinx.coroutines.flow.collectLatest
 fun OrganizacionScreen(
     viewModel: OrganizacionViewModel,
     usuario: UsuarioLocal,
-    alVolver: () -> Unit
+    alVolver: () -> Unit,
+    alVerOportunidades: () -> Unit,
+    alVerContactos: () -> Unit,
+    alAbrirLectorQR: () -> Unit,
+    alCerrarSesion: () -> Unit
 ) {
     val estado by viewModel.estado.collectAsStateWithLifecycle()
     val organizaciones by viewModel.organizaciones.collectAsStateWithLifecycle()
 
-    // Identifica el perfil conectado.
     val esEjecutivo = usuario.rol.equals(
         "EJECUTIVO_COMERCIAL",
         ignoreCase = true
@@ -42,14 +45,21 @@ fun OrganizacionScreen(
         ignoreCase = true
     )
 
-    var mostrarFormulario by remember { mutableStateOf(false) }
+    var mostrarFormulario by remember {
+        mutableStateOf(false)
+    }
 
     var organizacionAEliminar by remember {
         mutableStateOf<OrganizacionEntity?>(null)
     }
 
-    var mensajeDialogo by remember { mutableStateOf<String?>(null) }
-    var cerrarFormularioAlAceptar by remember { mutableStateOf(false) }
+    var mensajeDialogo by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    var cerrarFormularioAlAceptar by remember {
+        mutableStateOf(false)
+    }
 
     // Escucha los resultados de las operaciones del ViewModel.
     LaunchedEffect(viewModel) {
@@ -80,17 +90,31 @@ fun OrganizacionScreen(
             TopAppBar(
                 title = {
                     Text(
-                        if (esSupervisor) {
-                            "Consultar organizaciones"
-                        } else {
-                            "Organizaciones"
+                        when {
+                            mostrarFormulario && estado.esEdicion ->
+                                "Editar organización"
+
+                            mostrarFormulario ->
+                                "Nueva organización"
+
+                            esSupervisor ->
+                                "Consultar organizaciones"
+
+                            else ->
+                                "Organizaciones"
                         }
                     )
                 },
                 navigationIcon = {
-                    TextButton(onClick = alVolver) {
-                        Text("Volver")
-                    }
+                    MenuAplicacion(
+                        usuario = usuario,
+                        alIrMenuPrincipal = alVolver,
+                        alVerOportunidades = alVerOportunidades,
+                        alVerContactos = alVerContactos,
+                        alAbrirLectorQR = alAbrirLectorQR,
+                        alCerrarSesion = alCerrarSesion,
+                        mostrarOportunidades = true
+                    )
                 }
             )
         },

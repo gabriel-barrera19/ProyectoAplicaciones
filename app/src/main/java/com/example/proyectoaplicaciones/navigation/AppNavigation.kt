@@ -1,6 +1,7 @@
 package com.example.proyectoaplicaciones.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,7 +66,7 @@ fun AppNavigation() {
 
     val context = LocalContext.current
 
-    // Base de datos local.
+    // Base de datos.
     val database = AppDatabase.obtenerInstancia(context)
 
     // Repositorios.
@@ -85,7 +86,7 @@ fun AppNavigation() {
         database.seguimientoDao()
     )
 
-    // Fábrica para crear los ViewModels.
+    // Fábrica de ViewModels.
     val factory = object : ViewModelProvider.Factory {
 
         override fun <T : ViewModel> create(
@@ -120,9 +121,7 @@ fun AppNavigation() {
                 ) as T
             }
 
-            throw IllegalArgumentException(
-                "ViewModel desconocido"
-            )
+            throw IllegalArgumentException("ViewModel desconocido")
         }
     }
 
@@ -147,18 +146,49 @@ fun AppNavigation() {
         factory = factory
     )
 
+    // CIERRE DE SESIÓN CENTRALIZADO.
+    // La navegación se ejecuta mediante el efecto global de sesión.
+    val cerrarSesion = {
+        oportunidadSeleccionada = null
+        usuarioAutenticado = null
+    }
+
+    // REDIRECCIÓN CENTRALIZADA CUANDO NO EXISTE UNA SESIÓN.
+    // Evita navegar directamente durante la composición.
+    LaunchedEffect(usuarioAutenticado) {
+
+        if (usuarioAutenticado == null) {
+
+            val rutaActual = navController.currentBackStackEntry
+                ?.destination
+                ?.route
+
+            if (rutaActual != Rutas.LOGIN) {
+
+                navController.navigate(Rutas.LOGIN) {
+                    popUpTo(navController.graph.id) {
+                        inclusive = false
+                    }
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = Rutas.LOGIN
     ) {
 
-        // Inicio de sesión.
+        // LOGIN.
         composable(Rutas.LOGIN) {
+
             val loginViewModel: LoginViewModel = viewModel()
 
             LoginScreen(
                 viewModel = loginViewModel,
                 alLoginExitoso = { usuario ->
+
                     usuarioAutenticado = usuario
 
                     navController.navigate(Rutas.MENU) {
@@ -171,20 +201,12 @@ fun AppNavigation() {
             )
         }
 
-        // Menú principal.
+        // MENÚ PRINCIPAL.
         composable(Rutas.MENU) {
+
             val usuario = usuarioAutenticado
 
-            if (usuario == null) {
-
-                navController.navigate(Rutas.LOGIN) {
-                    popUpTo(Rutas.MENU) {
-                        inclusive = true
-                    }
-                    launchSingleTop = true
-                }
-
-            } else {
+            if (usuario != null) {
 
                 MenuPrincipalScreen(
                     usuario = usuario,
@@ -193,45 +215,28 @@ fun AppNavigation() {
                         navController.navigate(Rutas.INICIO)
                     },
 
-                    // Ambos perfiles pueden consultar organizaciones.
+                    // Ejecutivo y Supervisor.
                     alVerOrganizaciones = {
                         if (
-                            usuario.rol.equals(
-                                "EJECUTIVO_COMERCIAL",
-                                ignoreCase = true
-                            ) ||
-                            usuario.rol.equals(
-                                "SUPERVISOR_COMERCIAL",
-                                ignoreCase = true
-                            )
+                            usuario.rol.equals("EJECUTIVO_COMERCIAL", true) ||
+                            usuario.rol.equals("SUPERVISOR_COMERCIAL", true)
                         ) {
                             navController.navigate(Rutas.ORGANIZACIONES)
                         }
                     },
 
-                    // Por ahora, contactos continúa disponible
-                    // únicamente para el Ejecutivo.
+                    // Ejecutivo y Supervisor.
                     alVerContactos = {
                         if (
-                            usuario.rol.equals(
-                                "EJECUTIVO_COMERCIAL",
-                                ignoreCase = true
-                            )
+                            usuario.rol.equals("EJECUTIVO_COMERCIAL", true) ||
+                            usuario.rol.equals("SUPERVISOR_COMERCIAL", true)
                         ) {
                             navController.navigate(Rutas.CONTACTOS)
                         }
                     },
 
                     alCerrarSesion = {
-                        usuarioAutenticado = null
-                        oportunidadSeleccionada = null
-
-                        navController.navigate(Rutas.LOGIN) {
-                            popUpTo(navController.graph.id) {
-                                inclusive = true
-                            }
-                            launchSingleTop = true
-                        }
+                        cerrarSesion()
                     },
 
                     alAbrirLectorQR = {
@@ -241,44 +246,26 @@ fun AppNavigation() {
             }
         }
 
-        // Lista de oportunidades.
+        // LISTA DE OPORTUNIDADES.
         composable(Rutas.INICIO) {
+
             val usuario = usuarioAutenticado
 
-            if (usuario == null) {
-
-                navController.navigate(Rutas.LOGIN) {
-                    popUpTo(Rutas.INICIO) {
-                        inclusive = true
-                    }
-                    launchSingleTop = true
-                }
-
-            } else {
+            if (usuario != null) {
 
                 ListaOportunidadesScreen(
                     viewModel = oportunidadViewModel,
                     usuario = usuario,
 
                     alRegistrarOportunidad = {
-                        if (
-                            usuario.rol.equals(
-                                "EJECUTIVO_COMERCIAL",
-                                true
-                            )
-                        ) {
+                        if (usuario.rol.equals("EJECUTIVO_COMERCIAL", true)) {
                             oportunidadViewModel.prepararNuevaOportunidad()
                             navController.navigate(Rutas.FORMULARIO)
                         }
                     },
 
                     alEditarOportunidad = { oportunidad ->
-                        if (
-                            usuario.rol.equals(
-                                "EJECUTIVO_COMERCIAL",
-                                true
-                            )
-                        ) {
+                        if (usuario.rol.equals("EJECUTIVO_COMERCIAL", true)) {
                             oportunidadViewModel.iniciarEdicion(oportunidad)
                             navController.navigate(Rutas.FORMULARIO)
                         }
@@ -292,21 +279,34 @@ fun AppNavigation() {
 
                     alIrMenuPrincipal = {
                         navController.navigate(Rutas.MENU) {
-                            popUpTo(Rutas.MENU) {
-                                inclusive = false
-                            }
                             launchSingleTop = true
                         }
                     },
 
                     alCerrarSesion = {
-                        usuarioAutenticado = null
-                        oportunidadSeleccionada = null
+                        cerrarSesion()
+                    },
 
-                        navController.navigate(Rutas.LOGIN) {
-                            popUpTo(navController.graph.id) {
-                                inclusive = true
+                    alVerOrganizaciones = {
+                        navController.navigate(Rutas.ORGANIZACIONES) {
+                            launchSingleTop = true
+                        }
+                    },
+
+                    // Ambos perfiles pueden consultar contactos.
+                    alVerContactos = {
+                        if (
+                            usuario.rol.equals("EJECUTIVO_COMERCIAL", true) ||
+                            usuario.rol.equals("SUPERVISOR_COMERCIAL", true)
+                        ) {
+                            navController.navigate(Rutas.CONTACTOS) {
+                                launchSingleTop = true
                             }
+                        }
+                    },
+
+                    alAbrirLectorQR = {
+                        navController.navigate(Rutas.LECTOR_QR) {
                             launchSingleTop = true
                         }
                     }
@@ -314,22 +314,26 @@ fun AppNavigation() {
             }
         }
 
-        // Formulario de oportunidades.
+        // FORMULARIO DE OPORTUNIDADES.
+        // Exclusivo del Ejecutivo Comercial.
         composable(Rutas.FORMULARIO) {
+
             val usuario = usuarioAutenticado
 
-            if (
-                usuario == null ||
-                !usuario.rol.equals(
-                    "EJECUTIVO_COMERCIAL",
-                    true
-                )
-            ) {
-                navController.popBackStack()
-            } else {
+            val tienePermiso = usuario?.rol
+                ?.equals("EJECUTIVO_COMERCIAL", true) == true
+
+            LaunchedEffect(usuario) {
+                if (usuario != null && !tienePermiso) {
+                    navController.popBackStack()
+                }
+            }
+
+            if (usuario != null && tienePermiso) {
 
                 OportunidadFormScreen(
                     viewModel = oportunidadViewModel,
+                    usuario = usuario,
 
                     alVolver = {
                         navController.popBackStack()
@@ -348,31 +352,25 @@ fun AppNavigation() {
                     },
 
                     alCerrarSesion = {
-                        usuarioAutenticado = null
-                        oportunidadSeleccionada = null
-
-                        navController.navigate(Rutas.LOGIN) {
-                            popUpTo(navController.graph.id) {
-                                inclusive = true
-                            }
-                            launchSingleTop = true
-                        }
+                        cerrarSesion()
                     }
                 )
             }
         }
 
-        // Historial de seguimientos.
+        // SEGUIMIENTOS.
         composable(Rutas.SEGUIMIENTOS) {
 
             val usuario = usuarioAutenticado
             val oportunidad = oportunidadSeleccionada
 
-            if (usuario == null || oportunidad == null) {
+            LaunchedEffect(usuario, oportunidad) {
+                if (usuario != null && oportunidad == null) {
+                    navController.popBackStack()
+                }
+            }
 
-                navController.popBackStack()
-
-            } else {
+            if (usuario != null && oportunidad != null) {
 
                 SeguimientoScreen(
                     viewModel = seguimientoViewModel,
@@ -386,8 +384,9 @@ fun AppNavigation() {
             }
         }
 
-        // Lector QR.
+        // LECTOR QR.
         composable(Rutas.LECTOR_QR) {
+
             QrScannerScreen(
                 alVolver = {
                     navController.popBackStack()
@@ -395,60 +394,105 @@ fun AppNavigation() {
             )
         }
 
-        // Módulo de organizaciones.
-        // Ejecutivo y Supervisor pueden consultar.
+        // ORGANIZACIONES.
+        // Disponible para Ejecutivo y Supervisor.
         composable(Rutas.ORGANIZACIONES) {
+
             val usuario = usuarioAutenticado
 
-            if (
-                usuario == null ||
-                (
-                        !usuario.rol.equals(
-                            "EJECUTIVO_COMERCIAL",
-                            true
-                        ) &&
-                                !usuario.rol.equals(
-                                    "SUPERVISOR_COMERCIAL",
-                                    true
-                                )
-                        )
-            ) {
-                navController.popBackStack()
+            val tienePermiso =
+                usuario?.rol?.equals("EJECUTIVO_COMERCIAL", true) == true ||
+                        usuario?.rol?.equals("SUPERVISOR_COMERCIAL", true) == true
 
-            } else {
+            LaunchedEffect(usuario) {
+                if (usuario != null && !tienePermiso) {
+                    navController.popBackStack()
+                }
+            }
+
+            if (usuario != null && tienePermiso) {
 
                 OrganizacionScreen(
                     usuario = usuario,
                     viewModel = organizacionViewModel,
+
                     alVolver = {
                         navController.popBackStack()
+                    },
+
+                    alVerOportunidades = {
+                        navController.navigate(Rutas.INICIO) {
+                            launchSingleTop = true
+                        }
+                    },
+
+                    // Ambos perfiles pueden consultar contactos.
+                    alVerContactos = {
+                        navController.navigate(Rutas.CONTACTOS) {
+                            launchSingleTop = true
+                        }
+                    },
+
+                    alAbrirLectorQR = {
+                        navController.navigate(Rutas.LECTOR_QR) {
+                            launchSingleTop = true
+                        }
+                    },
+
+                    alCerrarSesion = {
+                        cerrarSesion()
                     }
                 )
             }
         }
 
-        // Módulo de contactos.
-        // Temporalmente disponible solo para el Ejecutivo.
+        // CONTACTOS.
+        // Disponible para Ejecutivo y Supervisor.
         composable(Rutas.CONTACTOS) {
+
             val usuario = usuarioAutenticado
 
-            if (
-                usuario == null ||
-                !usuario.rol.equals(
-                    "EJECUTIVO_COMERCIAL",
-                    true
-                )
-            ) {
-                navController.popBackStack()
+            val tienePermiso =
+                usuario?.rol?.equals("EJECUTIVO_COMERCIAL", true) == true ||
+                        usuario?.rol?.equals("SUPERVISOR_COMERCIAL", true) == true
 
-            } else {
+            LaunchedEffect(usuario) {
+                if (usuario != null && !tienePermiso) {
+                    navController.popBackStack()
+                }
+            }
+
+            if (usuario != null && tienePermiso) {
 
                 ContactoScreen(
                     contactoViewModel = contactoViewModel,
                     organizacionViewModel = organizacionViewModel,
                     usuario = usuario,
+
                     alVolver = {
                         navController.popBackStack()
+                    },
+
+                    alVerOportunidades = {
+                        navController.navigate(Rutas.INICIO) {
+                            launchSingleTop = true
+                        }
+                    },
+
+                    alVerOrganizaciones = {
+                        navController.navigate(Rutas.ORGANIZACIONES) {
+                            launchSingleTop = true
+                        }
+                    },
+
+                    alAbrirLectorQR = {
+                        navController.navigate(Rutas.LECTOR_QR) {
+                            launchSingleTop = true
+                        }
+                    },
+
+                    alCerrarSesion = {
+                        cerrarSesion()
                     }
                 )
             }

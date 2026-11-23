@@ -27,7 +27,11 @@ fun ContactoScreen(
     contactoViewModel: ContactoViewModel,
     organizacionViewModel: OrganizacionViewModel,
     usuario: UsuarioLocal,
-    alVolver: () -> Unit
+    alVolver: () -> Unit,
+    alVerOportunidades: () -> Unit,
+    alVerOrganizaciones: () -> Unit,
+    alAbrirLectorQR: () -> Unit,
+    alCerrarSesion: () -> Unit
 ) {
     val estado by contactoViewModel.estado.collectAsState()
     val contactos by contactoViewModel.contactos.collectAsState()
@@ -108,9 +112,16 @@ fun ContactoScreen(
                     )
                 },
                 navigationIcon = {
-                    TextButton(onClick = alVolver) {
-                        Text("Volver")
-                    }
+                    MenuAplicacion(
+                        usuario = usuario,
+                        alIrMenuPrincipal = alVolver,
+                        alVerOportunidades = alVerOportunidades,
+                        alVerOrganizaciones = alVerOrganizaciones,
+                        alVerContactos = null,
+                        alAbrirLectorQR = alAbrirLectorQR,
+                        alCerrarSesion = alCerrarSesion,
+                        mostrarOportunidades = true
+                    )
                 }
             )
         },

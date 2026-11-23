@@ -6,7 +6,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,20 +13,34 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import com.example.proyectoaplicaciones.model.UsuarioLocal
 
-/**
- * Menú reutilizable para las pantallas internas.
- */
 @Composable
 fun MenuAplicacion(
+    usuario: UsuarioLocal,
     alIrMenuPrincipal: () -> Unit,
     alVerOportunidades: () -> Unit,
-    alCerrarSesion: () -> Unit
+    alCerrarSesion: () -> Unit,
+    alVerOrganizaciones: (() -> Unit)? = null,
+    alVerContactos: (() -> Unit)? = null,
+    alAbrirLectorQR: (() -> Unit)? = null,
+    mostrarOportunidades: Boolean = true
 ) {
-    // Controla si el menú está abierto.
-    var menuAbierto by remember { mutableStateOf(false) }
+    var menuAbierto by remember {
+        mutableStateOf(false)
+    }
 
-    // Botón hamburguesa de la barra superior.
+    val esSupervisor = usuario.rol.equals(
+        "SUPERVISOR_COMERCIAL",
+        ignoreCase = true
+    )
+
+    val tituloOportunidades = if (esSupervisor) {
+        "Consultar oportunidades"
+    } else {
+        "Gestionar oportunidades"
+    }
+
     IconButton(
         onClick = {
             menuAbierto = true
@@ -39,7 +52,6 @@ fun MenuAplicacion(
         )
     }
 
-    // Opciones disponibles al pulsar el botón.
     DropdownMenu(
         expanded = menuAbierto,
         onDismissRequest = {
@@ -47,20 +59,74 @@ fun MenuAplicacion(
         }
     ) {
         DropdownMenuItem(
-            text = { Text("Menú principal") },
+            text = {
+                Text("Menú principal")
+            },
             onClick = {
                 menuAbierto = false
                 alIrMenuPrincipal()
             }
         )
 
-        DropdownMenuItem(
-            text = { Text("Gestión de oportunidades") },
-            onClick = {
-                menuAbierto = false
-                alVerOportunidades()
-            }
-        )
+        if (mostrarOportunidades) {
+            DropdownMenuItem(
+                text = {
+                    Text(tituloOportunidades)
+                },
+                onClick = {
+                    menuAbierto = false
+                    alVerOportunidades()
+                }
+            )
+        }
+
+        if (alVerOrganizaciones != null) {
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        if (esSupervisor) {
+                            "Consultar organizaciones"
+                        } else {
+                            "Gestionar organizaciones"
+                        }
+                    )
+                },
+                onClick = {
+                    menuAbierto = false
+                    alVerOrganizaciones()
+                }
+            )
+        }
+
+        if (alVerContactos != null) {
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        if (esSupervisor) {
+                            "Consultar contactos"
+                        } else {
+                            "Gestionar contactos"
+                        }
+                    )
+                },
+                onClick = {
+                    menuAbierto = false
+                    alVerContactos()
+                }
+            )
+        }
+
+        if (alAbrirLectorQR != null) {
+            DropdownMenuItem(
+                text = {
+                    Text("Leer código QR")
+                },
+                onClick = {
+                    menuAbierto = false
+                    alAbrirLectorQR()
+                }
+            )
+        }
 
         DropdownMenuItem(
             text = {

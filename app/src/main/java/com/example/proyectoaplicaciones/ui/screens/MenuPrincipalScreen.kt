@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -42,10 +40,6 @@ fun MenuPrincipalScreen(
     alCerrarSesion: () -> Unit,
     alAbrirLectorQR: () -> Unit
 ) {
-    var menuAbierto by remember {
-        mutableStateOf(false)
-    }
-
     var mostrarContenido by remember {
         mutableStateOf(false)
     }
@@ -71,106 +65,13 @@ fun MenuPrincipalScreen(
                 title = {
                     Text("Menú principal")
                 },
-                navigationIcon = {
+                actions = {
                     TextButton(
-                        onClick = {
-                            menuAbierto = true
-                        }
+                        onClick = alCerrarSesion
                     ) {
                         Text(
-                            text = "☰",
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = menuAbierto,
-                        onDismissRequest = {
-                            menuAbierto = false
-                        }
-                    ) {
-                        if (esEjecutivo) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text("Gestionar oportunidades")
-                                },
-                                onClick = {
-                                    menuAbierto = false
-                                    alVerOportunidades()
-                                }
-                            )
-
-                            DropdownMenuItem(
-                                text = {
-                                    Text("Gestionar organizaciones")
-                                },
-                                onClick = {
-                                    menuAbierto = false
-                                    alVerOrganizaciones()
-                                }
-                            )
-
-                            DropdownMenuItem(
-                                text = {
-                                    Text("Gestionar contactos")
-                                },
-                                onClick = {
-                                    menuAbierto = false
-                                    alVerContactos()
-                                }
-                            )
-                        }
-
-                        if (esSupervisor) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text("Consultar oportunidades")
-                                },
-                                onClick = {
-                                    menuAbierto = false
-                                    alVerOportunidades()
-                                }
-                            )
-
-                            DropdownMenuItem(
-                                text = {
-                                    Text("Consultar organizaciones")
-                                },
-                                onClick = {
-                                    menuAbierto = false
-                                    alVerOrganizaciones()
-                                }
-                            )
-
-                            DropdownMenuItem(
-                                text = {
-                                    Text("Consultar contactos")
-                                },
-                                onClick = {
-                                    menuAbierto = false
-                                    alVerContactos()
-                                }
-                            )
-                        }
-
-                        DropdownMenuItem(
-                            text = {
-                                Text("Leer código QR")
-                            },
-                            onClick = {
-                                menuAbierto = false
-                                alAbrirLectorQR()
-                            }
-                        )
-
-                        DropdownMenuItem(
-                            text = {
-                                Text("Cerrar sesión")
-                            },
-                            onClick = {
-                                menuAbierto = false
-                                alCerrarSesion()
-                            }
+                            text = "Cerrar sesión",
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
                 }

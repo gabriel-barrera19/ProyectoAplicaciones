@@ -46,7 +46,10 @@ fun ListaOportunidadesScreen(
     alEditarOportunidad: (OportunidadEntity) -> Unit,
     alVerSeguimientos: (OportunidadEntity) -> Unit,
     alIrMenuPrincipal: () -> Unit,
-    alCerrarSesion: () -> Unit
+    alCerrarSesion: () -> Unit,
+    alVerOrganizaciones: (() -> Unit)? = null,
+    alVerContactos: (() -> Unit)? = null,
+    alAbrirLectorQR: (() -> Unit)? = null
 ) {
     val oportunidades by viewModel.oportunidades.collectAsState()
 
@@ -90,17 +93,20 @@ fun ListaOportunidadesScreen(
                 },
                 navigationIcon = {
                     MenuAplicacion(
+                        usuario = usuario,
                         alIrMenuPrincipal = alIrMenuPrincipal,
                         alVerOportunidades = {},
-                        alCerrarSesion = alCerrarSesion
+                        alCerrarSesion = alCerrarSesion,
+                        alVerOrganizaciones = alVerOrganizaciones,
+                        alVerContactos = alVerContactos,
+                        alAbrirLectorQR = alAbrirLectorQR,
+                        mostrarOportunidades = false
                     )
                 }
             )
         }
     ) { paddingInterno ->
 
-        // El desplazamiento vertical se aplica solamente
-        // cuando el Supervisor está consultando un detalle.
         val modifierContenido = if (mostrandoDetalle) {
             Modifier
                 .fillMaxSize()
@@ -119,7 +125,6 @@ fun ListaOportunidadesScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
 
-            // DETALLE DE OPORTUNIDAD PARA EL SUPERVISOR
             if (mostrandoDetalle) {
 
                 val oportunidad = oportunidadSeleccionada!!
@@ -201,7 +206,6 @@ fun ListaOportunidadesScreen(
                             }
                         )
 
-                        // Acceso al historial de seguimientos.
                         Button(
                             onClick = {
                                 alVerSeguimientos(oportunidad)
@@ -215,7 +219,6 @@ fun ListaOportunidadesScreen(
 
             } else {
 
-                // FUNCIONES EXCLUSIVAS DEL EJECUTIVO
                 if (esEjecutivo) {
                     Button(
                         onClick = alRegistrarOportunidad,
@@ -307,7 +310,6 @@ fun ListaOportunidadesScreen(
                                             )
                                         }
 
-                                        // Acceso a seguimientos para ambos perfiles.
                                         Button(
                                             onClick = {
                                                 alVerSeguimientos(oportunidad)
@@ -317,7 +319,6 @@ fun ListaOportunidadesScreen(
                                             Text("Ver seguimientos")
                                         }
 
-                                        // Acciones exclusivas del Ejecutivo.
                                         if (esEjecutivo) {
 
                                             Row(
@@ -355,7 +356,6 @@ fun ListaOportunidadesScreen(
         }
     }
 
-    // CONFIRMACIÓN DE ELIMINACIÓN PARA EL EJECUTIVO.
     oportunidadPorEliminar?.let { oportunidad ->
 
         AlertDialog(

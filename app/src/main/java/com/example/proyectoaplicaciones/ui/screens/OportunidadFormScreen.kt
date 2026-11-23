@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.proyectoaplicaciones.model.UsuarioLocal
 import com.example.proyectoaplicaciones.viewmodel.OportunidadViewModel
 import java.util.Calendar
 import java.util.Locale
@@ -47,30 +48,29 @@ import java.util.Locale
 @Composable
 fun OportunidadFormScreen(
     viewModel: OportunidadViewModel,
+    usuario: UsuarioLocal,
     alVolver: () -> Unit,
     alIrMenuPrincipal: () -> Unit,
     alVerOportunidades: () -> Unit,
-    alCerrarSesion: () -> Unit
+    alCerrarSesion: () -> Unit,
+    alVerOrganizaciones: (() -> Unit)? = null,
+    alVerContactos: (() -> Unit)? = null,
+    alAbrirLectorQR: (() -> Unit)? = null
 ) {
-    // Observa el estado que administra el ViewModel.
     val estado by viewModel.estado.collectAsState()
 
-    // Controla la aparición animada del formulario.
     var mostrarFormulario by remember {
         mutableStateOf(false)
     }
 
-    // Activa la animación al mostrar la pantalla.
     LaunchedEffect(Unit) {
         mostrarFormulario = true
     }
 
-    // Guarda el mensaje de confirmación del guardado.
     var mensajeConfirmacion by remember {
         mutableStateOf<String?>(null)
     }
 
-    // Escucha el resultado que envía el ViewModel después de guardar.
     LaunchedEffect(viewModel) {
         viewModel.resultadoGuardado.collect { mensaje ->
             mensajeConfirmacion = mensaje
@@ -90,9 +90,7 @@ fun OportunidadFormScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(
-                        onClick = alVolver
-                    ) {
+                    IconButton(onClick = alVolver) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver a la lista"
@@ -101,16 +99,20 @@ fun OportunidadFormScreen(
                 },
                 actions = {
                     MenuAplicacion(
+                        usuario = usuario,
                         alIrMenuPrincipal = alIrMenuPrincipal,
                         alVerOportunidades = alVerOportunidades,
-                        alCerrarSesion = alCerrarSesion
+                        alCerrarSesion = alCerrarSesion,
+                        alVerOrganizaciones = alVerOrganizaciones,
+                        alVerContactos = alVerContactos,
+                        alAbrirLectorQR = alAbrirLectorQR,
+                        mostrarOportunidades = false
                     )
                 }
             )
         }
     ) { paddingInterno ->
 
-        // Animación de entrada del formulario.
         AnimatedVisibility(
             visible = mostrarFormulario,
             enter = fadeIn(
@@ -120,7 +122,6 @@ fun OportunidadFormScreen(
                 initialOffsetY = { altura -> altura / 10 }
             )
         ) {
-            // Contenedor principal del formulario.
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -132,7 +133,6 @@ fun OportunidadFormScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Campo: nombre.
                 CampoTexto(
                     etiqueta = "Nombre de la oportunidad",
                     valor = estado.nombre,
@@ -140,7 +140,6 @@ fun OportunidadFormScreen(
                     alCambiar = viewModel::onNombreChange
                 )
 
-                // Campo: descripción.
                 CampoTexto(
                     etiqueta = "Descripción",
                     valor = estado.descripcion,
@@ -149,7 +148,6 @@ fun OportunidadFormScreen(
                     unaLinea = false
                 )
 
-                // Selección: tipo.
                 CampoSeleccion(
                     etiqueta = "Tipo de oportunidad",
                     valor = estado.tipo,
@@ -163,7 +161,6 @@ fun OportunidadFormScreen(
                     alSeleccionar = viewModel::onTipoChange
                 )
 
-                // Campo: fuente de información.
                 CampoTexto(
                     etiqueta = "Fuente de información",
                     valor = estado.fuente,
@@ -171,13 +168,11 @@ fun OportunidadFormScreen(
                     alCambiar = viewModel::onFuenteChange
                 )
 
-                // Campo para seleccionar la fecha de la oportunidad.
                 CampoFecha(
                     fecha = estado.fecha,
                     alSeleccionar = viewModel::onFechaChange
                 )
 
-                // Selección: prioridad.
                 CampoSeleccion(
                     etiqueta = "Prioridad",
                     valor = estado.prioridad,
@@ -190,7 +185,6 @@ fun OportunidadFormScreen(
                     alSeleccionar = viewModel::onPrioridadChange
                 )
 
-                // Selección: potencial comercial.
                 CampoSeleccion(
                     etiqueta = "Potencial comercial",
                     valor = estado.potencialComercial,
@@ -203,7 +197,6 @@ fun OportunidadFormScreen(
                     alSeleccionar = viewModel::onPotencialComercialChange
                 )
 
-                // Selección: estado de gestión.
                 CampoSeleccion(
                     etiqueta = "Estado de gestión",
                     valor = estado.estado,
@@ -217,7 +210,6 @@ fun OportunidadFormScreen(
                     alSeleccionar = viewModel::onEstadoChange
                 )
 
-                // Campo opcional: observaciones.
                 CampoTexto(
                     etiqueta = "Observaciones (opcional)",
                     valor = estado.observaciones,
@@ -226,7 +218,6 @@ fun OportunidadFormScreen(
                     unaLinea = false
                 )
 
-                // Guarda la oportunidad si el formulario es válido.
                 Button(
                     onClick = {
                         viewModel.guardarOportunidad()
@@ -244,7 +235,6 @@ fun OportunidadFormScreen(
             }
         }
 
-        // El diálogo permanece fuera de la animación del formulario.
         if (mensajeConfirmacion != null) {
             AlertDialog(
                 onDismissRequest = {
@@ -266,8 +256,6 @@ fun OportunidadFormScreen(
                     TextButton(
                         onClick = {
                             mensajeConfirmacion = null
-
-                            // Regresa a Gestión de Oportunidades.
                             alVolver()
                         }
                     ) {
@@ -317,10 +305,8 @@ private fun CampoFecha(
     fecha: String,
     alSeleccionar: (String) -> Unit
 ) {
-    // Obtiene el contexto de Android para abrir el calendario.
     val contexto = LocalContext.current
 
-    // Muestra la fecha seleccionada en un campo de solo lectura.
     OutlinedTextField(
         value = fecha,
         onValueChange = {},
@@ -335,10 +321,8 @@ private fun CampoFecha(
         trailingIcon = {
             TextButton(
                 onClick = {
-                    // Obtiene la fecha actual para iniciar el calendario.
                     val calendario = Calendar.getInstance()
 
-                    // Si ya existe una fecha, intenta utilizarla.
                     if (fecha.isNotBlank()) {
                         val partes = fecha.split("-")
 
@@ -354,11 +338,9 @@ private fun CampoFecha(
                         }
                     }
 
-                    // Abre el calendario nativo de Android.
                     DatePickerDialog(
                         contexto,
                         { _, anio, mes, dia ->
-                            // Guarda la fecha con formato AAAA-MM-DD.
                             val fechaSeleccionada = String.format(
                                 Locale.ROOT,
                                 "%04d-%02d-%02d",
