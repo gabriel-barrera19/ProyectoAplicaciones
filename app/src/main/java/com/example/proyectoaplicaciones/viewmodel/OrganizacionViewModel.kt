@@ -128,6 +128,7 @@ class OrganizacionViewModel(
         }
     }
 
+
     // Actualiza la descripción opcional.
     fun onDescripcionChange(valor: String) {
         _estado.update { actual ->
@@ -192,6 +193,7 @@ class OrganizacionViewModel(
                 "El teléfono es obligatorio"
             } else null,
 
+
             correo = if (
                 actual.correo.isBlank() ||
                 !android.util.Patterns.EMAIL_ADDRESS
@@ -214,7 +216,7 @@ class OrganizacionViewModel(
             errores.comuna,
             errores.region,
             errores.telefono,
-            errores.correo
+            errores.correo,
         ).all { it == null }
     }
 

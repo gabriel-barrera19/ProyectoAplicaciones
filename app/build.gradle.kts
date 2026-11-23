@@ -35,6 +35,12 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        unitTests.all {
+            it.useJUnitPlatform()
+        }
+    }
 }
 
 dependencies {
@@ -55,6 +61,21 @@ dependencies {
 
     // Lectura de códigos QR con ML Kit.
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
+    // Pruebas unitarias con Kotest
+    testImplementation(libs.kotest.runner)
+    testImplementation(libs.kotest.assertions)
+    testRuntimeOnly("io.kotest:kotest-runner-junit5:5.8.0")
+
+    // JUnit 5
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.vintage)
+
+    // Simulación de dependencias
+    testImplementation(libs.mockk)
+
+    // Pruebas de corrutinas
+    testImplementation(libs.coroutines.test)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(platform(libs.androidx.compose.bom))

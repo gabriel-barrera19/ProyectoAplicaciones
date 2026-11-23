@@ -18,7 +18,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SeguimientoEntity::class,
         EventoEntity::class
     ],
-    version = 6,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -37,7 +37,6 @@ abstract class AppDatabase : RoomDatabase() {
 
         // Migración de la versión 1 a la versión 2.
         private val MIGRATION_1_2 = object : Migration(1, 2) {
-
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
                     """
@@ -50,7 +49,6 @@ abstract class AppDatabase : RoomDatabase() {
 
         // Migración de la versión 2 a la versión 3.
         private val MIGRATION_2_3 = object : Migration(2, 3) {
-
             override fun migrate(database: SupportSQLiteDatabase) {
 
                 database.execSQL(
@@ -98,7 +96,6 @@ abstract class AppDatabase : RoomDatabase() {
 
         // Migración de la versión 3 a la versión 4.
         private val MIGRATION_3_4 = object : Migration(3, 4) {
-
             override fun migrate(database: SupportSQLiteDatabase) {
 
                 database.execSQL(
@@ -129,10 +126,8 @@ abstract class AppDatabase : RoomDatabase() {
 
         // Migración de la versión 4 a la versión 5.
         private val MIGRATION_4_5 = object : Migration(4, 5) {
-
             override fun migrate(database: SupportSQLiteDatabase) {
 
-                // Crear la tabla de eventos.
                 database.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS eventos (
@@ -163,7 +158,6 @@ abstract class AppDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
 
-                // Índice para consultar eventos por organización.
                 database.execSQL(
                     """
                     CREATE INDEX IF NOT EXISTS index_eventos_organizacionId
@@ -171,7 +165,6 @@ abstract class AppDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
 
-                // Agregar la relación opcional entre oportunidad y evento.
                 database.execSQL(
                     """
                     ALTER TABLE oportunidades
@@ -179,7 +172,6 @@ abstract class AppDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
 
-                // Índice para consultar oportunidades por evento.
                 database.execSQL(
                     """
                     CREATE INDEX IF NOT EXISTS index_oportunidades_eventoId
@@ -190,36 +182,20 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         // Migración de la versión 5 a la versión 6.
-        // Corrige la clave foránea de oportunidades hacia eventos
-        // y elimina el valor predeterminado de fecha.
-        // Conserva los seguimientos existentes.
         private val MIGRATION_5_6 = object : Migration(5, 6) {
-
             override fun migrate(database: SupportSQLiteDatabase) {
 
-                // 1. Guardar temporalmente los seguimientos.
-                // Se hace antes de reconstruir oportunidades porque
-                // seguimientos tiene una clave foránea hacia esa tabla.
                 database.execSQL(
                     """
                     CREATE TABLE seguimientos_backup AS
-                    SELECT
-                        id,
-                        oportunidadId,
-                        fecha,
-                        tipoGestion,
-                        resultado,
-                        observaciones
+                    SELECT id, oportunidadId, fecha, tipoGestion,
+                           resultado, observaciones
                     FROM seguimientos
                     """.trimIndent()
                 )
 
-                // 2. Eliminar la tabla de seguimientos original.
-                database.execSQL(
-                    "DROP TABLE seguimientos"
-                )
+                database.execSQL("DROP TABLE seguimientos")
 
-                // 3. Crear la nueva estructura de oportunidades.
                 database.execSQL(
                     """
                     CREATE TABLE oportunidades_nueva (
@@ -242,42 +218,22 @@ abstract class AppDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
 
-                // 4. Copiar todas las oportunidades existentes.
                 database.execSQL(
                     """
                     INSERT INTO oportunidades_nueva (
-                        id,
-                        nombre,
-                        descripcion,
-                        tipo,
-                        fuente,
-                        prioridad,
-                        potencialComercial,
-                        estado,
-                        observaciones,
-                        fecha,
-                        eventoId
+                        id, nombre, descripcion, tipo, fuente,
+                        prioridad, potencialComercial, estado,
+                        observaciones, fecha, eventoId
                     )
                     SELECT
-                        id,
-                        nombre,
-                        descripcion,
-                        tipo,
-                        fuente,
-                        prioridad,
-                        potencialComercial,
-                        estado,
-                        observaciones,
-                        fecha,
-                        eventoId
+                        id, nombre, descripcion, tipo, fuente,
+                        prioridad, potencialComercial, estado,
+                        observaciones, fecha, eventoId
                     FROM oportunidades
                     """.trimIndent()
                 )
 
-                // 5. Reemplazar la tabla anterior.
-                database.execSQL(
-                    "DROP TABLE oportunidades"
-                )
+                database.execSQL("DROP TABLE oportunidades")
 
                 database.execSQL(
                     """
@@ -286,7 +242,6 @@ abstract class AppDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
 
-                // 6. Crear nuevamente el índice de eventoId.
                 database.execSQL(
                     """
                     CREATE INDEX index_oportunidades_eventoId
@@ -294,7 +249,6 @@ abstract class AppDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
 
-                // 7. Recrear la tabla de seguimientos con su relación.
                 database.execSQL(
                     """
                     CREATE TABLE seguimientos (
@@ -312,29 +266,19 @@ abstract class AppDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
 
-                // 8. Restaurar todos los seguimientos.
                 database.execSQL(
                     """
                     INSERT INTO seguimientos (
-                        id,
-                        oportunidadId,
-                        fecha,
-                        tipoGestion,
-                        resultado,
-                        observaciones
+                        id, oportunidadId, fecha,
+                        tipoGestion, resultado, observaciones
                     )
                     SELECT
-                        id,
-                        oportunidadId,
-                        fecha,
-                        tipoGestion,
-                        resultado,
-                        observaciones
+                        id, oportunidadId, fecha,
+                        tipoGestion, resultado, observaciones
                     FROM seguimientos_backup
                     """.trimIndent()
                 )
 
-                // 9. Recrear el índice de seguimientos.
                 database.execSQL(
                     """
                     CREATE INDEX index_seguimientos_oportunidadId
@@ -342,10 +286,7 @@ abstract class AppDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
 
-                // 10. Eliminar la copia temporal.
-                database.execSQL(
-                    "DROP TABLE seguimientos_backup"
-                )
+                database.execSQL("DROP TABLE seguimientos_backup")
             }
         }
 
@@ -368,6 +309,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_4_5,
                         MIGRATION_5_6
                     )
+                    // Recrea la base de datos si falta una migración.
+                    .fallbackToDestructiveMigration()
                     .build()
                     .also {
                         INSTANCE = it
