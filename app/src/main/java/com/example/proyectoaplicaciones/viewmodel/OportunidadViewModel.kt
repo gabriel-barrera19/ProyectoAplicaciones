@@ -35,11 +35,9 @@ class OportunidadViewModel(
     // Comunica a la pantalla el resultado de guardar una oportunidad.
     private val _resultadoGuardado = Channel<String>(Channel.BUFFERED)
 
-    // Permite que la pantalla reciba las confirmaciones de guardado.
     val resultadoGuardado = _resultadoGuardado.receiveAsFlow()
 
     // Guarda el ID de la oportunidad que se está editando.
-    // Si es null, significa que se registrará una oportunidad nueva.
     private var idOportunidadEditando: Int? = null
 
     // Lista observable de oportunidades almacenadas en Room.
@@ -129,11 +127,19 @@ class OportunidadViewModel(
         }
     }
 
-    // Actualiza la fecha seleccionada en el formulario.
+    // Actualiza la fecha seleccionada.
     fun onFechaChange(nuevaFecha: String) {
-        _estado.value = _estado.value.copy(
-            fecha = nuevaFecha
-        )
+        _estado.update { actual ->
+            actual.copy(fecha = nuevaFecha)
+        }
+    }
+
+    // Actualiza el evento asociado a la oportunidad.
+    // Si recibe null, la oportunidad queda sin evento asociado.
+    fun onEventoIdChange(nuevoEventoId: Int?) {
+        _estado.update { actual ->
+            actual.copy(eventoId = nuevoEventoId)
+        }
     }
 
     // Prepara el formulario para registrar una oportunidad nueva.
@@ -144,10 +150,8 @@ class OportunidadViewModel(
 
     // Carga los datos de una oportunidad seleccionada para editarla.
     fun iniciarEdicion(oportunidad: OportunidadEntity) {
-        // Conserva el ID original para actualizar el mismo registro.
         idOportunidadEditando = oportunidad.id
 
-        // Rellena el formulario con los datos existentes.
         _estado.value = OportunidadUiState(
             nombre = oportunidad.nombre,
             descripcion = oportunidad.descripcion,
@@ -158,6 +162,7 @@ class OportunidadViewModel(
             estado = oportunidad.estado,
             observaciones = oportunidad.observaciones,
             fecha = oportunidad.fecha,
+            eventoId = oportunidad.eventoId,
             esEdicion = true
         )
     }
@@ -197,11 +202,8 @@ class OportunidadViewModel(
             } else null
         )
 
-        // Publica los errores para mostrarlos en la pantalla.
         _estado.update { it.copy(errores = errores) }
 
-        // Devuelve true únicamente cuando todos los campos
-        // obligatorios son válidos.
         return listOf(
             errores.nombre,
             errores.descripcion,
@@ -215,17 +217,13 @@ class OportunidadViewModel(
 
     // Registra una oportunidad nueva o actualiza una existente.
     fun guardarOportunidad() {
-        // No guarda si hay errores de validación.
         if (!validarFormulario()) return
 
         val actual = _estado.value
-
-        // Obtiene el ID si se está editando.
         val idActual = idOportunidadEditando
 
         // Construye la entidad con los datos del formulario.
         val oportunidad = OportunidadEntity(
-            // Conserva el ID al editar; usa 0 para un registro nuevo.
             id = idActual ?: 0,
             nombre = actual.nombre.trim(),
             descripcion = actual.descripcion.trim(),
@@ -235,36 +233,33 @@ class OportunidadViewModel(
             potencialComercial = actual.potencialComercial,
             estado = actual.estado,
             fecha = actual.fecha,
-            observaciones = actual.observaciones.trim()
+            observaciones = actual.observaciones.trim(),
+
+            // Guarda la relación con el evento seleccionado.
+            eventoId = actual.eventoId
         )
 
-        // Ejecuta la operación de base de datos sin bloquear la UI.
         viewModelScope.launch {
             try {
-                // Guarda una oportunidad nueva o actualiza una existente.
                 if (idActual == null) {
                     repository.insertar(oportunidad)
 
-                    // Informa que el registro se creó correctamente.
                     _resultadoGuardado.send(
                         "Oportunidad creada exitosamente"
                     )
                 } else {
                     repository.actualizar(oportunidad)
 
-                    // Informa que los cambios se guardaron correctamente.
                     _resultadoGuardado.send(
                         "Oportunidad actualizada exitosamente"
                     )
                 }
 
-                // Restablece el formulario después de guardar.
                 prepararNuevaOportunidad()
 
             } catch (e: Exception) {
-                // Informa si ocurrió un problema al guardar.
                 _resultadoGuardado.send(
-                    "Error al guardar la oportunidad"
+                    "Error al guardar la oportunidad: ${e.message}"
                 )
             }
         }

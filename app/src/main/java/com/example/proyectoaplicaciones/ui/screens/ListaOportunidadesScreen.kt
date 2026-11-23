@@ -49,7 +49,8 @@ fun ListaOportunidadesScreen(
     alCerrarSesion: () -> Unit,
     alVerOrganizaciones: (() -> Unit)? = null,
     alVerContactos: (() -> Unit)? = null,
-    alAbrirLectorQR: (() -> Unit)? = null
+    alAbrirLectorQR: (() -> Unit)? = null,
+    alVerEventos: (() -> Unit)? = null
 ) {
     val oportunidades by viewModel.oportunidades.collectAsState()
 
@@ -100,7 +101,8 @@ fun ListaOportunidadesScreen(
                         alVerOrganizaciones = alVerOrganizaciones,
                         alVerContactos = alVerContactos,
                         alAbrirLectorQR = alAbrirLectorQR,
-                        mostrarOportunidades = false
+                        mostrarOportunidades = false,
+                        alVerEventos = alVerEventos
                     )
                 }
             )

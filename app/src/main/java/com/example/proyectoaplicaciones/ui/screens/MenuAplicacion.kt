@@ -24,7 +24,8 @@ fun MenuAplicacion(
     alVerOrganizaciones: (() -> Unit)? = null,
     alVerContactos: (() -> Unit)? = null,
     alAbrirLectorQR: (() -> Unit)? = null,
-    mostrarOportunidades: Boolean = true
+    mostrarOportunidades: Boolean = true,
+    alVerEventos: (() -> Unit)? = null
 ) {
     var menuAbierto by remember {
         mutableStateOf(false)
@@ -58,6 +59,7 @@ fun MenuAplicacion(
             menuAbierto = false
         }
     ) {
+
         DropdownMenuItem(
             text = {
                 Text("Menú principal")
@@ -76,6 +78,24 @@ fun MenuAplicacion(
                 onClick = {
                     menuAbierto = false
                     alVerOportunidades()
+                }
+            )
+        }
+
+        if (alVerEventos != null) {
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        if (esSupervisor) {
+                            "Consultar eventos"
+                        } else {
+                            "Gestionar eventos"
+                        }
+                    )
+                },
+                onClick = {
+                    menuAbierto = false
+                    alVerEventos()
                 }
             )
         }

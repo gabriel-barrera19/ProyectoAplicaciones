@@ -30,7 +30,8 @@ fun OrganizacionScreen(
     alVerOportunidades: () -> Unit,
     alVerContactos: () -> Unit,
     alAbrirLectorQR: () -> Unit,
-    alCerrarSesion: () -> Unit
+    alCerrarSesion: () -> Unit,
+    alVerEventos: (() -> Unit)? = null
 ) {
     val estado by viewModel.estado.collectAsStateWithLifecycle()
     val organizaciones by viewModel.organizaciones.collectAsStateWithLifecycle()
@@ -113,7 +114,8 @@ fun OrganizacionScreen(
                         alVerContactos = alVerContactos,
                         alAbrirLectorQR = alAbrirLectorQR,
                         alCerrarSesion = alCerrarSesion,
-                        mostrarOportunidades = true
+                        mostrarOportunidades = true,
+                        alVerEventos = alVerEventos
                     )
                 }
             )

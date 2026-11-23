@@ -27,8 +27,12 @@ data class OportunidadUiState(
     // Observaciones adicionales.
     val observaciones: String = "",
 
-    // Fecha asociada a la oportunidad, inicialmente vacía.
+    // Fecha asociada a la oportunidad.
     val fecha: String = "",
+
+    // Identificador del evento asociado.
+    // null significa que no hay evento seleccionado.
+    val eventoId: Int? = null,
 
     // Mensajes de error asociados a los campos.
     val errores: OportunidadErrores = OportunidadErrores(),

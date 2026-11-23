@@ -38,7 +38,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.proyectoaplicaciones.data.local.EventoEntity
 import com.example.proyectoaplicaciones.model.UsuarioLocal
+import com.example.proyectoaplicaciones.viewmodel.EventoViewModel
 import com.example.proyectoaplicaciones.viewmodel.OportunidadViewModel
 import java.util.Calendar
 import java.util.Locale
@@ -48,6 +50,7 @@ import java.util.Locale
 @Composable
 fun OportunidadFormScreen(
     viewModel: OportunidadViewModel,
+    eventoViewModel: EventoViewModel,
     usuario: UsuarioLocal,
     alVolver: () -> Unit,
     alIrMenuPrincipal: () -> Unit,
@@ -58,6 +61,7 @@ fun OportunidadFormScreen(
     alAbrirLectorQR: (() -> Unit)? = null
 ) {
     val estado by viewModel.estado.collectAsState()
+    val eventos by eventoViewModel.eventos.collectAsState()
 
     var mostrarFormulario by remember {
         mutableStateOf(false)
@@ -171,6 +175,12 @@ fun OportunidadFormScreen(
                 CampoFecha(
                     fecha = estado.fecha,
                     alSeleccionar = viewModel::onFechaChange
+                )
+
+                CampoSeleccionEvento(
+                    eventos = eventos,
+                    eventoIdSeleccionado = estado.eventoId,
+                    alSeleccionar = viewModel::onEventoIdChange
                 )
 
                 CampoSeleccion(
@@ -423,6 +433,62 @@ private fun CampoSeleccion(
                     },
                     onClick = {
                         alSeleccionar(opcion)
+                        expandido = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+// Permite asociar una oportunidad con un evento existente.
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CampoSeleccionEvento(
+    eventos: List<EventoEntity>,
+    eventoIdSeleccionado: Int?,
+    alSeleccionar: (Int?) -> Unit
+) {
+    var expandido by remember { mutableStateOf(false) }
+
+    val eventoSeleccionado = eventos.firstOrNull { it.id == eventoIdSeleccionado }
+    val textoSeleccionado = eventoSeleccionado?.nombre ?: "Sin evento asociado"
+
+    ExposedDropdownMenuBox(
+        expanded = expandido,
+        onExpandedChange = { expandido = !expandido },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = textoSeleccionado,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Evento asociado (opcional)") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandido)
+            },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expandido,
+            onDismissRequest = { expandido = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("Sin evento asociado") },
+                onClick = {
+                    alSeleccionar(null)
+                    expandido = false
+                }
+            )
+
+            eventos.forEach { evento ->
+                DropdownMenuItem(
+                    text = { Text(evento.nombre) },
+                    onClick = {
+                        alSeleccionar(evento.id)
                         expandido = false
                     }
                 )

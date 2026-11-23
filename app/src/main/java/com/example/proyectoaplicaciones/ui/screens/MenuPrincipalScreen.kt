@@ -38,7 +38,8 @@ fun MenuPrincipalScreen(
     alVerOrganizaciones: () -> Unit,
     alVerContactos: () -> Unit,
     alCerrarSesion: () -> Unit,
-    alAbrirLectorQR: () -> Unit
+    alAbrirLectorQR: () -> Unit,
+    alVerEventos: () -> Unit
 ) {
     var mostrarContenido by remember {
         mutableStateOf(false)
@@ -99,6 +100,7 @@ fun MenuPrincipalScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+
                 Text(
                     text = "Bienvenido, ${usuario.nombre}",
                     style = MaterialTheme.typography.headlineMedium,
@@ -125,11 +127,21 @@ fun MenuPrincipalScreen(
 
                 // Opciones del Ejecutivo Comercial.
                 if (esEjecutivo) {
+
                     Button(
                         onClick = alVerOportunidades,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Gestionar oportunidades")
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = alVerEventos,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Gestionar eventos")
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -155,11 +167,21 @@ fun MenuPrincipalScreen(
 
                 // Opciones del Supervisor Comercial.
                 if (esSupervisor) {
+
                     Button(
                         onClick = alVerOportunidades,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Consultar oportunidades")
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = alVerEventos,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Consultar eventos")
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))

@@ -37,7 +37,9 @@ import com.example.proyectoaplicaciones.viewmodel.LoginViewModel
 import com.example.proyectoaplicaciones.viewmodel.OportunidadViewModel
 import com.example.proyectoaplicaciones.viewmodel.OrganizacionViewModel
 import com.example.proyectoaplicaciones.viewmodel.SeguimientoViewModel
-
+import com.example.proyectoaplicaciones.repository.EventoRepository
+import com.example.proyectoaplicaciones.ui.screens.EventoScreen
+import com.example.proyectoaplicaciones.viewmodel.EventoViewModel
 
 object Rutas {
     const val LOGIN = "login"
@@ -48,6 +50,7 @@ object Rutas {
     const val ORGANIZACIONES = "organizaciones"
     const val CONTACTOS = "contactos"
     const val SEGUIMIENTOS = "seguimientos"
+    const val EVENTOS = "eventos"
 }
 
 
@@ -86,6 +89,10 @@ fun AppNavigation() {
         database.seguimientoDao()
     )
 
+    val eventoRepository = EventoRepository(
+        database.eventoDao()
+    )
+
     // Fábrica de ViewModels.
     val factory = object : ViewModelProvider.Factory {
 
@@ -121,6 +128,13 @@ fun AppNavigation() {
                 ) as T
             }
 
+            if (modelClass.isAssignableFrom(EventoViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return EventoViewModel(
+                    eventoRepository
+                ) as T
+            }
+
             throw IllegalArgumentException("ViewModel desconocido")
         }
     }
@@ -143,6 +157,11 @@ fun AppNavigation() {
 
     val seguimientoViewModel: SeguimientoViewModel = viewModel(
         key = "SeguimientoViewModel",
+        factory = factory
+    )
+
+    val eventoViewModel: EventoViewModel = viewModel(
+        key = "EventoViewModel",
         factory = factory
     )
 
@@ -241,6 +260,11 @@ fun AppNavigation() {
 
                     alAbrirLectorQR = {
                         navController.navigate(Rutas.LECTOR_QR)
+                    },
+                    alVerEventos = {
+                        navController.navigate(Rutas.EVENTOS) {
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
@@ -309,6 +333,11 @@ fun AppNavigation() {
                         navController.navigate(Rutas.LECTOR_QR) {
                             launchSingleTop = true
                         }
+                    },
+                    alVerEventos = {
+                        navController.navigate(Rutas.EVENTOS) {
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
@@ -333,6 +362,7 @@ fun AppNavigation() {
 
                 OportunidadFormScreen(
                     viewModel = oportunidadViewModel,
+                    eventoViewModel = eventoViewModel,
                     usuario = usuario,
 
                     alVolver = {
@@ -441,6 +471,11 @@ fun AppNavigation() {
 
                     alCerrarSesion = {
                         cerrarSesion()
+                    },
+                    alVerEventos = {
+                        navController.navigate(Rutas.EVENTOS) {
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
@@ -487,6 +522,62 @@ fun AppNavigation() {
 
                     alAbrirLectorQR = {
                         navController.navigate(Rutas.LECTOR_QR) {
+                            launchSingleTop = true
+                        }
+                    },
+
+                    alCerrarSesion = {
+                        cerrarSesion()
+                    },
+                    alVerEventos = {
+                        navController.navigate(Rutas.EVENTOS) {
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+        }
+        // EVENTOS.
+// Disponible para Ejecutivo y Supervisor.
+        composable(Rutas.EVENTOS) {
+
+            val usuario = usuarioAutenticado
+
+            val tienePermiso =
+                usuario?.rol?.equals("EJECUTIVO_COMERCIAL", true) == true ||
+                        usuario?.rol?.equals("SUPERVISOR_COMERCIAL", true) == true
+
+            LaunchedEffect(usuario) {
+                if (usuario != null && !tienePermiso) {
+                    navController.popBackStack()
+                }
+            }
+
+            if (usuario != null && tienePermiso) {
+
+                EventoScreen(
+                    eventoViewModel = eventoViewModel,
+                    organizacionViewModel = organizacionViewModel,
+                    usuario = usuario,
+
+                    alVolver = {
+                        navController.popBackStack()
+                    },
+
+                    alVerOportunidades = {
+                        navController.navigate(Rutas.INICIO) {
+                            launchSingleTop = true
+                        }
+                    },
+
+                    alVerOrganizaciones = {
+                        navController.navigate(Rutas.ORGANIZACIONES) {
+                            launchSingleTop = true
+                        }
+                    },
+
+                    alVerContactos = {
+                        navController.navigate(Rutas.CONTACTOS) {
                             launchSingleTop = true
                         }
                     },

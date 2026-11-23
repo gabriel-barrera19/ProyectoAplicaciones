@@ -31,7 +31,8 @@ fun ContactoScreen(
     alVerOportunidades: () -> Unit,
     alVerOrganizaciones: () -> Unit,
     alAbrirLectorQR: () -> Unit,
-    alCerrarSesion: () -> Unit
+    alCerrarSesion: () -> Unit,
+    alVerEventos: (() -> Unit)? = null
 ) {
     val estado by contactoViewModel.estado.collectAsState()
     val contactos by contactoViewModel.contactos.collectAsState()
@@ -120,7 +121,8 @@ fun ContactoScreen(
                         alVerContactos = null,
                         alAbrirLectorQR = alAbrirLectorQR,
                         alCerrarSesion = alCerrarSesion,
-                        mostrarOportunidades = true
+                        mostrarOportunidades = true,
+                        alVerEventos = alVerEventos
                     )
                 }
             )
